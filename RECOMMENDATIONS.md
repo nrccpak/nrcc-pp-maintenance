@@ -5,6 +5,23 @@
 
 ---
 
+## Progress log
+
+- **✅ Done (2026-07-01):** 5.1, 5.2, 5.3 — security lockdown applied directly to the live Supabase
+  project via three migrations (`security_views_use_invoker_rls`, `security_revoke_anon_table_grants`,
+  `security_scope_authenticated_policies`). Verified by role-impersonation: `anon` is now denied on all
+  5 views + all 5 base tables; `authenticated` still has every read/write path the app actually uses
+  (equipment status/remarks update, maintenance task completion update, history insert); DELETE/TRUNCATE
+  are now blocked for `authenticated` on all tables. Re-ran the security advisor: all 5 "Security Definer
+  View" ERRORs are gone; remaining WARNs are the accepted shared-login trade-off (see below). No app code
+  changed — this was DB-only.
+  - **Not done (needs Dashboard access, no MCP tool for it):** enabling leaked-password protection
+    (Auth setting), and the medium-term "per-user accounts" half of 5.3 (still one shared login, so the
+    `USING(true)`/`WITH CHECK(true)` WARNs on INSERT/UPDATE remain — fixing those for real requires
+    `auth.uid()`-based ownership, which doesn't exist in this schema yet).
+
+---
+
 ## Executive summary — start here
 
 The project is in good shape for its age: sensible schema with real constraints and comments, consistent
@@ -13,7 +30,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 
 | # | Finding | Area | Priority |
 |---|---------|------|----------|
-| 1 | All 5 views are readable by `anon` — the entire dataset is public despite the login page | Security | **High** |
+| 1 | ✅ *Fixed* — All 5 views are readable by `anon` — the entire dataset is public despite the login page | Security | **High** |
 | 2 | "Log Completion" on the Maintenance Board always fails (writes to generated DB columns) | Code | **High** |
 | 3 | Equipment page "System" filter is permanently empty (`select('name')` vs column `system_name`) | Code | **High** |
 | 4 | 9 Lube Oil Separator tasks stuck in "Unknown" — view doesn't map their hours to the parent engine | Database | **High** |
@@ -414,7 +431,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 
 ## 5. Security
 
-### 5.1 Entire dataset readable without login through the views **[verified — advisor ERROR ×5]**
+### 5.1 Entire dataset readable without login through the views **[verified — advisor ERROR ×5]** ✅ Fixed 2026-07-01
 - **Area:** Security
 - **Issue:** All five views (`v_equipment_current_status`, `v_maintenance_due`, `v_data_gaps`,
   `v_latest_hours`, `v_major_overhaul_status`) are owned by `postgres` **without `security_invoker`**, and
@@ -433,7 +450,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Small
 - **Priority:** **High** (the single most important item in this review)
 
-### 5.2 Default grants left on base tables for `anon`
+### 5.2 Default grants left on base tables for `anon` ✅ Fixed 2026-07-01
 - **Area:** Security
 - **Issue:** `anon` also holds INSERT/UPDATE/DELETE/TRUNCATE grants on every base table (Supabase's default
   grants). RLS currently blocks these (no anon policies), so it's defense-in-depth rather than an active
@@ -443,7 +460,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Small
 - **Priority:** Medium
 
-### 5.3 Shared login + `USING (true)` write policies = no least privilege, no audit trail
+### 5.3 Shared login + `USING (true)` write policies = no least privilege, no audit trail ⚠️ Partially fixed 2026-07-01 (policy split done; per-user accounts still open)
 - **Area:** Security
 - **Issue:** One shared account (verified: exactly 1 auth user); every authenticated session has
   unrestricted ALL (including DELETE) on all tables — advisor WARNs on all five policies. Any operator can

@@ -4,6 +4,7 @@ const NAV = [
   { to: '/', label: 'Dashboard', end: true },
   { to: '/equipment', label: 'Equipment Registry' },
   { to: '/maintenance', label: 'Maintenance' },
+  { to: '/major-maintenance', label: 'Major Maintenance' },
   { to: '/data-gaps', label: 'Data Gaps' },
 ]
 

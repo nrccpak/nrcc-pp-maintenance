@@ -35,13 +35,19 @@ export function DueBadge({ state }) {
   )
 }
 
-export function MetricTile({ label, value, accent = 'text-ink-hi', sub }) {
+export function MetricTile({ label, value, accent = 'text-ink-hi', sub, onClick }) {
+  const Tag = onClick ? 'button' : 'div'
   return (
-    <div className="rounded-lg border border-panel-line bg-panel-surface px-4 py-3">
+    <Tag
+      onClick={onClick}
+      className={`w-full rounded-lg border border-panel-line bg-panel-surface px-4 py-3 text-left ${
+        onClick ? 'cursor-pointer transition-colors hover:border-panel-line2 hover:bg-panel-raised' : ''
+      }`}
+    >
       <div className="text-[11px] uppercase tracking-wider text-ink-lo">{label}</div>
       <div className={`mt-1 font-mono text-2xl font-medium tnum ${accent}`}>{value}</div>
       {sub && <div className="mt-0.5 text-xs text-ink-lo">{sub}</div>}
-    </div>
+    </Tag>
   )
 }
 

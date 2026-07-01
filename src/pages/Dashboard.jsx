@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { useKpis, useEquipmentStatus, useOverdueMaintenance } from '../lib/hooks'
+import { useKpis, useEquipmentStatus, useOverdueMaintenance, useEquipmentTasks } from '../lib/hooks'
 import { StatusDot, MetricTile, Spinner } from '../components/ui'
 
 function fmtHours(h) {
@@ -43,7 +43,7 @@ function KpiStrip({ onOverdueClick }) {
   )
 }
 
-function GensetGrid() {
+function GensetGrid({ onSelectTasks }) {
   const { data, loading } = useEquipmentStatus()
   if (loading || !data) return <Spinner label="Reading meters" />
 
@@ -53,7 +53,8 @@ function GensetGrid() {
 
   const Card = ({ item }) => {
     const over = item.overdue_count > 0
-    const accent = over ? 'border-st-over/40' : item.due_soon_count > 0 ? 'border-st-warn/30' : 'border-panel-line'
+    const dueSoon = item.due_soon_count > 0
+    const accent = over ? 'border-st-over/40' : dueSoon ? 'border-st-warn/30' : 'border-panel-line'
     const label = item.component_type === 'Engine'
       ? item.equipment
       : `${item.equipment === 'Fuel Treatment' ? item.component_type : item.equipment}`
@@ -72,11 +73,23 @@ function GensetGrid() {
         </div>
         <div className="mt-2.5 flex items-center gap-3 text-[11px]">
           {over ? (
-            <span className="text-st-over">{item.overdue_count} overdue</span>
+            <button
+              onClick={() => onSelectTasks(item, 'Overdue')}
+              className="text-st-over underline underline-offset-2 hover:text-st-over/80"
+            >
+              {item.overdue_count} overdue
+            </button>
           ) : (
             <span className="text-ink-lo">on schedule</span>
           )}
-          {item.due_soon_count > 0 && <span className="text-st-warn">{item.due_soon_count} due soon</span>}
+          {dueSoon && (
+            <button
+              onClick={() => onSelectTasks(item, 'Due Soon')}
+              className="text-st-warn underline underline-offset-2 hover:text-st-warn/80"
+            >
+              {item.due_soon_count} due soon
+            </button>
+          )}
           <span className="ml-auto text-ink-lo">{item.maintenance_task_count} tasks</span>
         </div>
       </div>
@@ -99,6 +112,58 @@ function GensetGrid() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function EquipmentTasksPanel({ selection, onClose }) {
+  const criteria = selection
+    ? {
+        line: selection.item.line,
+        equipment: selection.item.equipment,
+        component_type: selection.item.component_type,
+        dueState: selection.dueState,
+      }
+    : null
+  const { data, loading } = useEquipmentTasks(criteria)
+  if (!selection) return null
+
+  const accent = selection.dueState === 'Overdue' ? 'text-st-over' : 'text-st-warn'
+
+  return (
+    <div className="fixed inset-0 z-[60]">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-panel-line bg-panel-surface shadow-2xl">
+        <div className="flex items-start justify-between border-b border-panel-line px-5 pt-5 pb-4">
+          <div>
+            <div className="text-[11px] uppercase tracking-wider text-ink-lo">
+              {selection.item.line} · {selection.item.component_type}
+            </div>
+            <div className="text-lg font-semibold text-ink-hi">{selection.item.equipment}</div>
+            <div className={`mt-1 text-sm font-medium ${accent}`}>{selection.dueState} tasks</div>
+          </div>
+          <button onClick={onClose} className="text-2xl leading-none text-ink-lo hover:text-ink-hi">×</button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {loading || !data ? (
+            <Spinner />
+          ) : data.length === 0 ? (
+            <div className="py-10 text-center text-sm text-ink-lo">No matching tasks.</div>
+          ) : (
+            <div className="space-y-2">
+              {data.map((t, i) => (
+                <div key={t.id ?? i} className="rounded-lg border border-panel-line bg-panel-bg p-3">
+                  <div className="text-sm font-medium text-ink-hi">{t.task_name}</div>
+                  <div className="mt-1.5 flex items-center justify-between text-xs font-mono tnum text-ink-lo">
+                    <span>{currentDisplay(t)} → due {dueAtDisplay(t)}</span>
+                    <span className={`font-medium ${accent}`}>{overdueDisplay(t)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -172,6 +237,7 @@ function SectionLabel({ children, className = '' }) {
 export default function Dashboard() {
   const [overdueExpanded, setOverdueExpanded] = useState(false)
   const overdueRef = useRef(null)
+  const [equipmentSelection, setEquipmentSelection] = useState(null)
 
   const expandOverdue = () => {
     setOverdueExpanded(true)
@@ -189,13 +255,16 @@ export default function Dashboard() {
       </header>
 
       <div className="mb-6"><KpiStrip onOverdueClick={expandOverdue} /></div>
-      <div className="mb-6"><GensetGrid /></div>
+      <div className="mb-6">
+        <GensetGrid onSelectTasks={(item, dueState) => setEquipmentSelection({ item, dueState })} />
+      </div>
       <OverduePanel
         expanded={overdueExpanded}
         onExpand={() => setOverdueExpanded(true)}
         onCollapse={() => setOverdueExpanded(false)}
         panelRef={overdueRef}
       />
+      <EquipmentTasksPanel selection={equipmentSelection} onClose={() => setEquipmentSelection(null)} />
     </div>
   )
 }

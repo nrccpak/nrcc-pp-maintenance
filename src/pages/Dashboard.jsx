@@ -1,12 +1,28 @@
+import { useRef, useState } from 'react'
 import { useKpis, useEquipmentStatus, useOverdueMaintenance } from '../lib/hooks'
-import { StatusDot, DueBadge, MetricTile, Spinner } from '../components/ui'
+import { StatusDot, MetricTile, Spinner } from '../components/ui'
 
 function fmtHours(h) {
   if (h === null || h === undefined) return '—'
   return Number(h).toLocaleString('en-US', { maximumFractionDigits: 0 })
 }
 
-function KpiStrip() {
+function currentDisplay(t) {
+  return t.interval_basis === 'Hours' && t.current_hours != null ? `${fmtHours(t.current_hours)} hrs` : '—'
+}
+
+function dueAtDisplay(t) {
+  if (t.interval_basis === 'Hours') return t.next_due_hours != null ? `${fmtHours(t.next_due_hours)} hrs` : '—'
+  return t.next_due_date || '—'
+}
+
+function overdueDisplay(t) {
+  if (t.hours_remaining != null) return `${fmtHours(Math.abs(t.hours_remaining))} hrs`
+  if (t.days_remaining != null) return `${Math.abs(t.days_remaining)} days`
+  return '—'
+}
+
+function KpiStrip({ onOverdueClick }) {
   const { data, loading } = useKpis()
   if (loading || !data) return <div className="h-[76px]"><Spinner /></div>
   return (
@@ -14,7 +30,13 @@ function KpiStrip() {
       <MetricTile label="Equipment" value={data.totalEquipment} />
       <MetricTile label="Running" value={data.running} accent="text-st-run" />
       <MetricTile label="Standby" value={data.standby} accent="text-st-standby" />
-      <MetricTile label="Overdue" value={data.overdue} accent="text-st-over" sub="maintenance tasks" />
+      <MetricTile
+        label="Overdue"
+        value={data.overdue}
+        accent="text-st-over"
+        sub="maintenance tasks — click to view"
+        onClick={onOverdueClick}
+      />
       <MetricTile label="Due Soon" value={data.dueSoon} accent="text-st-warn" />
       <MetricTile label="Data Gaps" value={data.dataGaps} accent="text-ink-mid" />
     </div>
@@ -81,15 +103,21 @@ function GensetGrid() {
   )
 }
 
-function OverduePanel() {
+function OverduePanel({ expanded, onExpand, onCollapse, panelRef }) {
   const { data, loading } = useOverdueMaintenance()
   if (loading || !data) return <Spinner />
-  const hoursTasks = data.filter(d => d.interval_basis === 'Hours').slice(0, 12)
+
+  const PREVIEW_SIZE = 12
+  const preview = data.filter(d => d.interval_basis === 'Hours').slice(0, PREVIEW_SIZE)
+  const shown = expanded ? data : preview
+  const hasMore = !expanded && data.length > preview.length
 
   return (
-    <div className="rounded-lg border border-panel-line bg-panel-surface">
+    <div ref={panelRef} className="rounded-lg border border-panel-line bg-panel-surface">
       <div className="flex items-center justify-between border-b border-panel-line px-4 py-3">
-        <SectionLabel className="mb-0">Overdue — by hours past due</SectionLabel>
+        <SectionLabel className="mb-0">
+          {expanded ? 'All overdue maintenance tasks' : 'Overdue — by hours past due'}
+        </SectionLabel>
         <span className="font-mono text-xs text-st-over">{data.length} total</span>
       </div>
       <table className="w-full text-sm">
@@ -103,19 +131,32 @@ function OverduePanel() {
           </tr>
         </thead>
         <tbody>
-          {hoursTasks.map((t, i) => (
-            <tr key={i} className="border-t border-panel-line/60">
+          {shown.map((t, i) => (
+            <tr key={t.id ?? i} className="border-t border-panel-line/60">
               <td className="px-4 py-2 font-mono text-ink-hi">{t.equipment}</td>
               <td className="px-4 py-2 text-ink-mid">{t.task_name}</td>
-              <td className="px-4 py-2 text-right font-mono tnum text-ink-mid">{fmtHours(t.current_hours)}</td>
-              <td className="px-4 py-2 text-right font-mono tnum text-ink-lo">{fmtHours(t.next_due_hours)}</td>
-              <td className="px-4 py-2 text-right font-mono tnum font-medium text-st-over">
-                {fmtHours(Math.abs(t.hours_remaining))}
-              </td>
+              <td className="px-4 py-2 text-right font-mono tnum text-ink-mid">{currentDisplay(t)}</td>
+              <td className="px-4 py-2 text-right font-mono tnum text-ink-lo">{dueAtDisplay(t)}</td>
+              <td className="px-4 py-2 text-right font-mono tnum font-medium text-st-over">{overdueDisplay(t)}</td>
             </tr>
           ))}
+          {shown.length === 0 && (
+            <tr>
+              <td colSpan={5} className="px-4 py-6 text-center text-sm text-ink-lo">No overdue tasks.</td>
+            </tr>
+          )}
         </tbody>
       </table>
+      {(hasMore || expanded) && (
+        <div className="border-t border-panel-line px-4 py-2.5 text-center">
+          <button
+            onClick={hasMore ? onExpand : onCollapse}
+            className="text-xs text-ink-mid underline underline-offset-2 hover:text-ink-hi"
+          >
+            {hasMore ? `Show all ${data.length} overdue tasks` : 'Show less'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -129,6 +170,14 @@ function SectionLabel({ children, className = '' }) {
 }
 
 export default function Dashboard() {
+  const [overdueExpanded, setOverdueExpanded] = useState(false)
+  const overdueRef = useRef(null)
+
+  const expandOverdue = () => {
+    setOverdueExpanded(true)
+    overdueRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-6 py-6">
       <header className="mb-6 flex items-baseline justify-between">
@@ -139,9 +188,14 @@ export default function Dashboard() {
         <div className="font-mono text-xs text-ink-lo">readings as of 29 Jun 2026</div>
       </header>
 
-      <div className="mb-6"><KpiStrip /></div>
+      <div className="mb-6"><KpiStrip onOverdueClick={expandOverdue} /></div>
       <div className="mb-6"><GensetGrid /></div>
-      <OverduePanel />
+      <OverduePanel
+        expanded={overdueExpanded}
+        onExpand={() => setOverdueExpanded(true)}
+        onCollapse={() => setOverdueExpanded(false)}
+        panelRef={overdueRef}
+      />
     </div>
   )
 }

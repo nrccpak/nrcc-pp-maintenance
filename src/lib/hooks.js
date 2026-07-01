@@ -66,3 +66,19 @@ export function useOverdueMaintenance() {
       .order('hours_remaining', { ascending: true, nullsFirst: false })
   )
 }
+
+// Tasks for one specific piece of equipment, filtered to a single due_state
+// (e.g. the "2 overdue" badge on a single DG's card)
+export function useEquipmentTasks(criteria) {
+  return useQuery(() => {
+    if (!criteria) return Promise.resolve({ data: [], error: null })
+    return supabase
+      .from('v_maintenance_due')
+      .select('*')
+      .eq('line', criteria.line)
+      .eq('equipment', criteria.equipment)
+      .eq('component_type', criteria.component_type)
+      .eq('due_state', criteria.dueState)
+      .order('hours_remaining', { ascending: true, nullsFirst: false })
+  }, [criteria?.line, criteria?.equipment, criteria?.component_type, criteria?.dueState])
+}

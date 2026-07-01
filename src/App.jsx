@@ -3,6 +3,7 @@ import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import Equipment from './pages/Equipment'
 import Maintenance from './pages/Maintenance'
+import MajorMaintenance from './pages/MajorMaintenance'
 import DataGaps from './pages/DataGaps'
 import Login from './pages/Login'
 import { AuthProvider, useAuth } from './lib/AuthContext'
@@ -45,6 +46,7 @@ export default function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/equipment" element={<Equipment />} />
               <Route path="/maintenance" element={<Maintenance />} />
+              <Route path="/major-maintenance" element={<MajorMaintenance />} />
               <Route path="/data-gaps" element={<DataGaps />} />
             </Routes>
           </Layout>

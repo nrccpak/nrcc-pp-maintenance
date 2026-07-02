@@ -25,6 +25,11 @@ function normalizeState(s) {
 const STATE_ORDER = ['Overdue', 'Due Soon', 'Scheduled', 'Unknown']
 const HIST_PAGE_SIZE = 25
 
+// Nested PM interval chain (Engine, Hours-based) — lowest to highest tier.
+// Completing a higher tier sweeps in any lower-tier task (any component on
+// the same equipment) that is currently due, per the nested-closure rule.
+const SERVICE_TIER_CHAIN = ['500hr Schedule Service', '1K Service', '2K Service', '6K Service', '12K Major Overhaul']
+
 const COLORS = {
   'Overdue':  {
     pill:  'bg-red-900/30 text-red-400 border border-red-800/60',
@@ -90,6 +95,12 @@ export default function Maintenance() {
   const [logDesc,    setLogDesc]    = useState('')
   const [logSaving,  setLogSaving]  = useState(false)
   const [logError,   setLogError]   = useState('')
+
+  // nested PM interval sweep-in candidates (lower-tier tasks due to be
+  // closed alongside a higher-tier Engine service)
+  const [sweepCandidates, setSweepCandidates] = useState([])
+  const [sweepChecked,    setSweepChecked]    = useState({})
+  const [sweepLoading,    setSweepLoading]    = useState(false)
 
   // history log tab
   const [activeTab,          setActiveTab]          = useState('tasks')   // 'tasks' | 'history'
@@ -209,6 +220,47 @@ export default function Maintenance() {
   )
 
   /* ── log completion ─────────────────────────────────────────────── */
+
+  // When the modal opens on a higher-tier Engine service, find sibling
+  // tasks on the same equipment (any component) that are at or below this
+  // tier and currently due — candidates to sweep-close alongside it.
+  useEffect(() => {
+    if (!modal || !selected) { setSweepCandidates([]); setSweepChecked({}); return }
+
+    const isTrigger = selected.component_type === 'Engine'
+      && selected.interval_basis === 'Hours'
+      && SERVICE_TIER_CHAIN.includes(selected.task_name)
+
+    if (!isTrigger) { setSweepCandidates([]); setSweepChecked({}); return }
+
+    setSweepLoading(true)
+    Promise.all([
+      supabase.from('maintenance_status')
+        .select('id, interval_hours')
+        .eq('line', selected.line)
+        .eq('equipment', selected.equipment)
+        .eq('interval_basis', 'Hours'),
+      supabase.from('v_maintenance_due')
+        .select('*')
+        .eq('line', selected.line)
+        .eq('equipment', selected.equipment)
+        .eq('interval_basis', 'Hours'),
+    ]).then(([{ data: statusRows }, { data: dueRows }]) => {
+      const intervalById = Object.fromEntries((statusRows || []).map(r => [r.id, Number(r.interval_hours)]))
+      const triggerInterval = intervalById[selected.id]
+      const siblings = (dueRows || []).filter(t =>
+        t.id !== selected.id &&
+        triggerInterval != null &&
+        intervalById[t.id] != null &&
+        intervalById[t.id] <= triggerInterval &&
+        (t.due_state === 'Overdue' || t.due_state === 'Due Soon')
+      )
+      setSweepCandidates(siblings)
+      setSweepChecked(Object.fromEntries(siblings.map(s => [s.id, true])))
+      setSweepLoading(false)
+    })
+  }, [modal, selected])
+
   function computeNextDue() {
     if (!taskDetail) return null
     if (taskDetail.interval_basis === 'Hours') {
@@ -268,6 +320,33 @@ export default function Maintenance() {
       source:           'Manual entry',
     })
 
+    // nested PM interval rule: close confirmed lower-tier siblings alongside
+    // this higher-tier service (same equipment, same completion date)
+    const confirmedSweeps = sweepCandidates.filter(c => sweepChecked[c.id])
+    for (const c of confirmedSweeps) {
+      const sameMeterAsTrigger = c.component_type === 'Engine' // shares the engine's physical hour meter
+      const closeNote = `Closed as part of ${selected.task_name} performed on ${logDate} — not independently serviced.`
+
+      await supabase.from('maintenance_status').update({
+        last_done_date: logDate,
+        ...(sameMeterAsTrigger ? { last_done_hours: parseFloat(logHours) } : {}),
+        remarks: closeNote,
+        updated_at: new Date().toISOString(),
+      }).eq('id', c.id)
+
+      await supabase.from('maintenance_history').insert({
+        line:             selected.line,
+        equipment:        selected.equipment,
+        component_type:   c.component_type,
+        work_date:        logDate,
+        run_hours:        sameMeterAsTrigger ? parseFloat(logHours) : null,
+        work_description: closeNote,
+        work_category:    'PMS',
+        linked_task_id:   c.id,
+        source:           'Auto-closed via nested PM rule',
+      })
+    }
+
     // refresh tasks + history
     await loadTasks()
     const { data: hist } = await supabase
@@ -285,6 +364,8 @@ export default function Maintenance() {
     setLogDate(todayStr())
     setLogDesc('')
     setLogSaving(false)
+    setSweepCandidates([])
+    setSweepChecked({})
   }
 
   /* ── render ──────────────────────────────────────────────────────── */
@@ -791,6 +872,44 @@ export default function Maintenance() {
                              px-3 py-2 text-sm resize-none focus:outline-none focus:border-blue-500/70"
                 />
               </div>
+
+              {/* nested PM interval sweep-in */}
+              {sweepLoading && (
+                <div className="text-xs text-gray-600">Checking for lower-tier tasks due on this equipment…</div>
+              )}
+              {!sweepLoading && sweepCandidates.length > 0 && (
+                <div>
+                  <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
+                    Will also be closed as part of this service
+                  </label>
+                  <div className="space-y-1.5">
+                    {sweepCandidates.map(c => (
+                      <label
+                        key={c.id}
+                        className="flex items-start gap-2.5 bg-[#0e1116] border border-[#21262d] rounded px-3 py-2
+                                   cursor-pointer hover:border-[#30363d] transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!sweepChecked[c.id]}
+                          onChange={e => setSweepChecked(prev => ({ ...prev, [c.id]: e.target.checked }))}
+                          className="mt-0.5 accent-emerald-600"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-gray-200 text-xs font-medium leading-tight">
+                            {c.component_type} · {c.task_name}
+                          </div>
+                          <div className="text-gray-500 text-[10px] font-mono mt-0.5">{urgencyDisplay(c)}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="text-[10px] text-gray-600 mt-2 leading-relaxed">
+                    Each confirmed task is marked complete on {logDate || 'this date'} with a history note
+                    referencing this {selected.task_name}.
+                  </div>
+                </div>
+              )}
 
               {logError && (
                 <div className="text-xs text-red-400 bg-red-900/20 border border-red-800/40 rounded px-3 py-2.5">

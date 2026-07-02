@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { ErrorBanner } from '../components/ui'
 
 /* ── helpers ──────────────────────────────────────────────────────────── */
 function fmtHours(n) {
@@ -106,20 +107,22 @@ function OverhaulTable({ title, rows }) {
 
 /* ── main component ───────────────────────────────────────────────────── */
 export default function MajorMaintenance() {
-  const [rows,    setRows]    = useState([])
-  const [loading, setLoading] = useState(true)
+  const [rows,      setRows]      = useState([])
+  const [loading,   setLoading]   = useState(true)
+  const [loadError, setLoadError] = useState('')
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true)
-      const { data } = await supabase
-        .from('v_major_overhaul_status')
-        .select('*')
-      setRows(data || [])
-      setLoading(false)
-    }
-    load()
-  }, [])
+  async function load() {
+    setLoading(true)
+    setLoadError('')
+    const { data, error } = await supabase
+      .from('v_major_overhaul_status')
+      .select('*')
+    if (error) { setLoadError(error.message); setLoading(false); return }
+    setRows(data || [])
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
 
   if (loading) return (
     <div className="flex items-center justify-center h-64 text-gray-500">
@@ -127,6 +130,12 @@ export default function MajorMaintenance() {
         <div className="w-6 h-6 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
         <div className="text-sm">Loading major overhaul status…</div>
       </div>
+    </div>
+  )
+
+  if (loadError) return (
+    <div className="max-w-2xl">
+      <ErrorBanner message={loadError} onRetry={load} />
     </div>
   )
 

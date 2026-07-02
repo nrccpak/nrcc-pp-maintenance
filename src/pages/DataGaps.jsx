@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { ErrorBanner } from '../components/ui'
 
 /* ── constants ────────────────────────────────────────────────────────── */
 const STATUS_ORDER = ['GAP', 'Partial-GAP', 'Field-verify']
@@ -47,6 +48,7 @@ export default function DataGaps() {
   /* ── state ──────────────────────────────────────────────────────── */
   const [gaps,     setGaps]     = useState([])
   const [loading,  setLoading]  = useState(true)
+  const [loadError,setLoadError]= useState('')
   const [collapsed,setCollapsed]= useState({})
 
   const [search,       setSearch]       = useState('')
@@ -63,9 +65,11 @@ export default function DataGaps() {
   /* ── load ───────────────────────────────────────────────────────── */
   async function loadGaps() {
     setLoading(true)
-    const { data } = await supabase
+    setLoadError('')
+    const { data, error } = await supabase
       .from('v_data_gaps')
       .select('*')
+    if (error) { setLoadError(error.message); setLoading(false); return }
     setGaps(data || [])
     setLoading(false)
   }
@@ -164,6 +168,12 @@ export default function DataGaps() {
         <div className="w-6 h-6 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
         <div className="text-sm">Loading data gaps…</div>
       </div>
+    </div>
+  )
+
+  if (loadError) return (
+    <div className="max-w-2xl">
+      <ErrorBanner message={loadError} onRetry={loadGaps} />
     </div>
   )
 

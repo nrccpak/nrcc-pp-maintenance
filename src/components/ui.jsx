@@ -60,6 +60,24 @@ export function MetricTile({ label, value, accent = 'text-ink-hi', sub, onClick 
   )
 }
 
+// Uses plain red-* utilities (not the panel-*/ink-* tokens) so it renders
+// correctly on both the token-based pages and the hex-based ones.
+export function ErrorBanner({ message, onRetry, className = '' }) {
+  return (
+    <div className={`flex items-center justify-between gap-3 rounded-lg border border-red-800/60 bg-red-900/20 px-4 py-3 text-sm text-red-400 ${className}`}>
+      <span>{message || 'Something went wrong loading this data.'}</span>
+      {onRetry && (
+        <button
+          onClick={onRetry}
+          className="shrink-0 rounded border border-red-800/60 px-2.5 py-1 text-xs text-red-300 hover:bg-red-900/40"
+        >
+          Retry
+        </button>
+      )}
+    </div>
+  )
+}
+
 export function Spinner({ label = 'Loading' }) {
   return (
     <div className="flex items-center gap-2 py-8 text-ink-lo text-sm">

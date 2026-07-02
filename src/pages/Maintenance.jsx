@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { ErrorBanner } from '../components/ui'
 
 /* ── helpers ──────────────────────────────────────────────────────────── */
 function urgencyDisplay(task) {
@@ -72,6 +73,7 @@ export default function Maintenance() {
   /* ── state ──────────────────────────────────────────────────────── */
   const [tasks,    setTasks]    = useState([])
   const [loading,  setLoading]  = useState(true)
+  const [loadError,setLoadError]= useState('')
   const [collapsed,setCollapsed]= useState({})   // { Overdue: false, … }
 
   const [search,      setSearch]      = useState('')
@@ -101,6 +103,7 @@ export default function Maintenance() {
   const [histFilterCategory, setHistFilterCategory] = useState('')
   const [histPage,           setHistPage]           = useState(1)
   const [expandedHistId,     setExpandedHistId]     = useState(null)
+  const [histLoadError,      setHistLoadError]      = useState('')
 
   /* ── helpers ────────────────────────────────────────────────────── */
   function todayStr() { return new Date().toISOString().slice(0, 10) }
@@ -113,9 +116,11 @@ export default function Maintenance() {
   /* ── data loading ───────────────────────────────────────────────── */
   async function loadTasks() {
     setLoading(true)
-    const { data } = await supabase
+    setLoadError('')
+    const { data, error } = await supabase
       .from('v_maintenance_due')
       .select('*')
+    if (error) { setLoadError(error.message); setLoading(false); return [] }
     const rows = data || []
     setTasks(rows)
     setLoading(false)
@@ -144,10 +149,12 @@ export default function Maintenance() {
 
   async function loadAllHistory() {
     setHistoryListLoading(true)
-    const { data } = await supabase
+    setHistLoadError('')
+    const { data, error } = await supabase
       .from('maintenance_history')
       .select('*')
       .order('work_date', { ascending: false })
+    if (error) { setHistLoadError(error.message); setHistoryListLoading(false); return }
     setAllHistory(data || [])
     setHistoryListLoading(false)
     setHistoryListLoaded(true)
@@ -460,7 +467,11 @@ export default function Maintenance() {
             )
           })}
 
-          {filtered.length === 0 && !loading && (
+          {loadError && !loading && (
+            <ErrorBanner message={loadError} onRetry={loadTasks} />
+          )}
+
+          {!loadError && filtered.length === 0 && !loading && (
             <div className="text-center py-16 text-gray-600 text-sm">
               No tasks match your filters.
             </div>
@@ -508,6 +519,8 @@ export default function Maintenance() {
                   <div className="text-sm">Loading history…</div>
                 </div>
               </div>
+            ) : histLoadError ? (
+              <ErrorBanner message={histLoadError} onRetry={loadAllHistory} />
             ) : histFiltered.length === 0 ? (
               <div className="text-center py-16 text-gray-600 text-sm">
                 No history records match your filters.

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { ErrorBanner } from '../components/ui'
 
 const DATA_STATUS_STYLES = {
   'Confirmed':    'bg-emerald-900/30 text-emerald-400 border border-emerald-800/60',
@@ -34,11 +35,12 @@ const STATUS_OPTIONS = ['Confirmed', 'Field-verify', 'GAP', 'Partial-GAP']
 
 export default function EquipmentRegistry() {
   /* ── data ─────────────────────────────────────────────────── */
-  const [rows,    setRows]    = useState([])
-  const [total,   setTotal]   = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [systems, setSystems] = useState([])
-  const [summary, setSummary] = useState({})
+  const [rows,      setRows]      = useState([])
+  const [total,     setTotal]     = useState(0)
+  const [loading,   setLoading]   = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [systems,   setSystems]   = useState([])
+  const [summary,   setSummary]   = useState({})
 
   /* ── filters ──────────────────────────────────────────────── */
   const [search,       setSearch]       = useState('')
@@ -73,6 +75,7 @@ export default function EquipmentRegistry() {
   /* ── load filtered table ──────────────────────────────────── */
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadError('')
     let q = supabase
       .from('equipment')
       .select('*', { count: 'exact' })
@@ -85,7 +88,8 @@ export default function EquipmentRegistry() {
     if (filterStatus) q = q.eq('data_status', filterStatus)
 
     const { data, count, error } = await q
-    if (!error) { setRows(data || []); setTotal(count || 0) }
+    if (error) setLoadError(error.message)
+    else { setRows(data || []); setTotal(count || 0) }
     setLoading(false)
   }, [search, filterLine, filterSystem, filterStatus, page])
 
@@ -225,6 +229,12 @@ export default function EquipmentRegistry() {
                     <td colSpan={7} className="text-center py-16 text-gray-600">
                       <div className="inline-block w-5 h-5 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mb-2" />
                       <div className="text-xs">Loading equipment…</div>
+                    </td>
+                  </tr>
+                ) : loadError ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-6">
+                      <ErrorBanner message={loadError} onRetry={load} />
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (

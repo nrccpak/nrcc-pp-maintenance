@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useKpis, useEquipmentStatus, useOverdueMaintenance, useEquipmentTasks } from '../lib/hooks'
-import { StatusDot, MetricTile, Spinner } from '../components/ui'
+import { StatusDot, MetricTile, Spinner, ErrorBanner } from '../components/ui'
 
 function fmtHours(h) {
   if (h === null || h === undefined) return '—'
@@ -34,7 +34,8 @@ function overdueDisplay(t) {
 }
 
 function KpiStrip({ onOverdueClick }) {
-  const { data, loading } = useKpis()
+  const { data, loading, error, refetch } = useKpis()
+  if (error) return <ErrorBanner message={error.message} onRetry={refetch} />
   if (loading || !data) return <div className="h-[76px]"><Spinner /></div>
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -54,7 +55,8 @@ function KpiStrip({ onOverdueClick }) {
   )
 }
 
-function GensetGrid({ data, loading, onSelectTasks }) {
+function GensetGrid({ data, loading, error, onRetry, onSelectTasks }) {
+  if (error) return <ErrorBanner message={error.message} onRetry={onRetry} />
   if (loading || !data) return <Spinner label="Reading meters" />
 
   // engines first, then other hours-tracked items
@@ -135,7 +137,7 @@ function EquipmentTasksPanel({ selection, onClose }) {
         dueState: selection.dueState,
       }
     : null
-  const { data, loading } = useEquipmentTasks(criteria)
+  const { data, loading, error, refetch } = useEquipmentTasks(criteria)
   if (!selection) return null
 
   const accent = selection.dueState === 'Overdue' ? 'text-st-over' : 'text-st-warn'
@@ -155,7 +157,9 @@ function EquipmentTasksPanel({ selection, onClose }) {
           <button onClick={onClose} className="text-2xl leading-none text-ink-lo hover:text-ink-hi">×</button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {loading || !data ? (
+          {error ? (
+            <ErrorBanner message={error.message} onRetry={refetch} />
+          ) : loading || !data ? (
             <Spinner />
           ) : data.length === 0 ? (
             <div className="py-10 text-center text-sm text-ink-lo">No matching tasks.</div>
@@ -179,7 +183,8 @@ function EquipmentTasksPanel({ selection, onClose }) {
 }
 
 function OverduePanel({ expanded, onExpand, onCollapse, panelRef }) {
-  const { data, loading } = useOverdueMaintenance()
+  const { data, loading, error, refetch } = useOverdueMaintenance()
+  if (error) return <ErrorBanner message={error.message} onRetry={refetch} />
   if (loading || !data) return <Spinner />
 
   const PREVIEW_SIZE = 12
@@ -248,7 +253,7 @@ export default function Dashboard() {
   const [overdueExpanded, setOverdueExpanded] = useState(false)
   const overdueRef = useRef(null)
   const [equipmentSelection, setEquipmentSelection] = useState(null)
-  const { data: equipmentData, loading: equipmentLoading } = useEquipmentStatus()
+  const { data: equipmentData, loading: equipmentLoading, error: equipmentError, refetch: refetchEquipment } = useEquipmentStatus()
 
   const expandOverdue = () => {
     setOverdueExpanded(true)
@@ -274,6 +279,8 @@ export default function Dashboard() {
         <GensetGrid
           data={equipmentData}
           loading={equipmentLoading}
+          error={equipmentError}
+          onRetry={refetchEquipment}
           onSelectTasks={(item, dueState) => setEquipmentSelection({ item, dueState })}
         />
       </div>

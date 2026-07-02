@@ -6,10 +6,12 @@ export function useQuery(builder, deps = []) {
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let active = true
     setLoading(true)
+    setError(null)
     builder()
       .then(({ data, error }) => {
         if (!active) return
@@ -17,11 +19,18 @@ export function useQuery(builder, deps = []) {
         else setData(data)
         setLoading(false)
       })
+      .catch(err => {
+        if (!active) return
+        setError(err)
+        setLoading(false)
+      })
     return () => { active = false }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps)
+  }, [...deps, reloadKey])
 
-  return { data, error, loading }
+  const refetch = () => setReloadKey(k => k + 1)
+
+  return { data, error, loading, refetch }
 }
 
 // KPI rollup for the dashboard header

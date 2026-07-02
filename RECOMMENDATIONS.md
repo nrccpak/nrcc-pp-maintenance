@@ -63,6 +63,23 @@
   - **Not done:** 7.3 (error monitoring / Sentry) needs an external account and DSN — no MCP tool can
     create one. Full Vitest/Playwright coverage for 1.11 also remains open.
 
+- **✅ Done (2026-07-02):** 4.5, 7.1 — product.
+  - **4.5** Dashboard data (KPIs, equipment grid, overdue panel) now polls every 60s via a
+    `refetchInterval` option added to `useQuery`, since it's meant to be left open on a wall display
+    rather than manually reloaded. Everything else stays fetch-on-navigate, as before.
+  - **7.1** New **Log Readings** page (`/log-readings`, in the nav right after Dashboard): a checklist of
+    every hour-tracked item grouped by line, showing each one's previous reading/date for reference, with
+    an hours input and a status dropdown per row. Submits all filled rows as a single batch insert into
+    `equipment_status_log`. Flags (but doesn't block) a reading that's lower than the previous one, per
+    finding 2.3's "warn, don't hard-reject" guidance — meter replacements happen. This was the biggest
+    product gap in the review: previously the only way to log a reading was the Supabase SQL console.
+    Verified with Playwright: entered readings produce the exact expected batch-insert payload, the
+    lower-reading warning fires correctly, and the form clears and shows a success message after submit
+    (carrying the just-submitted status forward as the new default for the next round).
+  - **Not started:** 1.5/3.1 (token consolidation → theme presets) — this is the largest remaining item
+    and involves real design decisions (color values for two new themes), so it's paused for a check-in
+    rather than assumed.
+
 ---
 
 ## Executive summary — start here
@@ -462,7 +479,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Medium
 - **Priority:** Medium
 
-### 4.5 No live/auto refresh
+### 4.5 No live/auto refresh ✅ Fixed 2026-07-02
 - **Area:** Performance (product behavior)
 - **Issue:** A control-room dashboard left open on a wall screen shows frozen data until manually reloaded.
 - **Suggested approach:** Cheap: `refetchInterval` (60s) once 1.7 lands. Fancier: Supabase Realtime
@@ -600,7 +617,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 
 ## 7. Anything else worth flagging
 
-### 7.1 No data-entry path for hour readings — the biggest workflow gap
+### 7.1 No data-entry path for hour readings — the biggest workflow gap ✅ Fixed 2026-07-02
 - **Area:** Other (product)
 - **Issue:** The freshness of *everything* (due states, overdue hours, major overhaul tracking) depends on
   `equipment_status_log`, which has no UI — its 38 rows were seeded manually. Today someone must use the

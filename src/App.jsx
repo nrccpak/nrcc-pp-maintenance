@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
+import LogReadings from './pages/LogReadings'
 import Equipment from './pages/Equipment'
 import Maintenance from './pages/Maintenance'
 import MajorMaintenance from './pages/MajorMaintenance'
@@ -34,6 +35,7 @@ export default function App() {
           <Layout>
             <Routes>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/log-readings" element={<LogReadings />} />
               <Route path="/equipment" element={<Equipment />} />
               <Route path="/maintenance" element={<Maintenance />} />
               <Route path="/major-maintenance" element={<MajorMaintenance />} />

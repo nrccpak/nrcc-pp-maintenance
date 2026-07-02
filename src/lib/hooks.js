@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase'
 
-// Generic fetch hook for a view/table with optional query shaping
-export function useQuery(builder, deps = []) {
+// Generic fetch hook for a view/table with optional query shaping.
+// Pass { refetchInterval: ms } to poll in the background (e.g. a wall display).
+export function useQuery(builder, deps = [], { refetchInterval } = {}) {
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -28,10 +29,20 @@ export function useQuery(builder, deps = []) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, reloadKey])
 
+  useEffect(() => {
+    if (!refetchInterval) return
+    const id = setInterval(() => setReloadKey(k => k + 1), refetchInterval)
+    return () => clearInterval(id)
+  }, [refetchInterval])
+
   const refetch = () => setReloadKey(k => k + 1)
 
   return { data, error, loading, refetch }
 }
+
+// Dashboard data refreshes on its own every minute, since it's meant to be
+// left open on a wall display rather than manually reloaded.
+const DASHBOARD_REFRESH_MS = 60_000
 
 // KPI rollup for the dashboard header
 export function useKpis() {
@@ -55,7 +66,7 @@ export function useKpis() {
       },
       error: eq.error || status.error || maint.error || gaps.error,
     }
-  })
+  }, [], { refetchInterval: DASHBOARD_REFRESH_MS })
 }
 
 export function useEquipmentStatus() {
@@ -64,7 +75,7 @@ export function useEquipmentStatus() {
       .select('*')
       .eq('is_hours_tracked', true)
       .order('overdue_count', { ascending: false })
-  )
+  , [], { refetchInterval: DASHBOARD_REFRESH_MS })
 }
 
 export function useOverdueMaintenance() {
@@ -73,6 +84,16 @@ export function useOverdueMaintenance() {
       .select('*')
       .eq('due_state', 'Overdue')
       .order('hours_remaining', { ascending: true, nullsFirst: false })
+  , [], { refetchInterval: DASHBOARD_REFRESH_MS })
+}
+
+// Ordered checklist of every hour-tracked item, for the readings entry form.
+export function useHoursTrackedEquipment() {
+  return useQuery(() =>
+    supabase.from('v_equipment_current_status')
+      .select('*')
+      .eq('is_hours_tracked', true)
+      .order('line').order('equipment').order('component_type')
   )
 }
 

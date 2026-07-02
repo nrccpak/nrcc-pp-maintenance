@@ -80,6 +80,25 @@
     and involves real design decisions (color values for two new themes), so it's paused for a check-in
     rather than assumed.
 
+- **✅ Done (2026-07-02):** 1.5 (token consolidation half only) — scope chosen explicitly over the larger
+  "tokens + 3 theme presets" option.
+  - **1.5** `Equipment.jsx`, `Maintenance.jsx`, `DataGaps.jsx`, and `MajorMaintenance.jsx` now use the same
+    semantic `panel-*`/`ink-*`/`st-*` tokens `Dashboard.jsx` already used, instead of hardcoded GitHub-palette
+    hexes (`#161b22`, `#30363d`, `bg-[#0d1b2a]`) and raw `gray-*` utilities. Headings, panel backgrounds, row
+    selection, borders, spinners, and due-state/data-status color maps (Overdue/GAP → `st-over`, Due
+    Soon/Field-verify → `st-warn`, Scheduled/Unknown → neutral `ink-*`/`panel-*`) are now consistent across
+    all 5 pages.
+  - **Deliberately left unconverted** (no semantic token fits, or it's a generic UI accent rather than a
+    due-state color): solid CTA buttons (`bg-blue-600`/`bg-emerald-700` + `text-white` — Save Changes,
+    pagination active page, Mark as Confirmed, Confirm Completion); the Maintenance Board tab switcher's
+    active-tab highlight; the "next due will be set to" preview text in the Log Completion modal;
+    `Partial-GAP`/`Partial-GAP` orange accents (no `st-*` token for a partial/warning-adjacent state).
+  - **Not done:** 3.1's theme-preset half (CSS custom properties + a `data-theme` toggle + 2 new palettes)
+    remains out of scope for this round, per the explicit choice to consolidate only.
+  - Verified via Playwright screenshots of all 4 pages plus their detail-panel/modal/tab-switch interaction
+    states (mocked Supabase responses covering every due-state/data-status color), `npx oxlint src/`, and
+    `npm run build` — no new lint errors, clean build, no visual regressions.
+
 ---
 
 ## Executive summary — start here
@@ -98,7 +117,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 | 6 | ✅ *Fixed* — Dashboard header date "readings as of 29 Jun 2026" is hardcoded and will silently go stale | Code | **High** |
 | 7 | 25 maintenance tasks in "Unknown" state from missing baselines; 5 hour-meter regressions in the log | Data quality | **High** |
 | 8 | ✅ *Fixed* — Schema has no committed migration history — the DB is unreproducible from the repo | Other | Medium |
-| 9 | Theme: consolidate the two coexisting styling systems first, then yes — offer 2–3 preset themes | UI/UX | Medium |
+| 9 | ⚠️ *Partially fixed* — Theme: consolidate the two coexisting styling systems first (done), then offer 2–3 preset themes (not started) | UI/UX | Medium |
 | 10 | ✅ *Fixed* — No error surfacing anywhere — failed queries render as convincing empty states | Code | Medium |
 
 ---
@@ -150,7 +169,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Small–Medium
 - **Priority:** Medium (High leverage — it converts every future silent bug into a visible one)
 
-### 1.5 Two coexisting design systems
+### 1.5 Two coexisting design systems ✅ Fixed 2026-07-02
 - **Area:** Code architecture & logic (also UI/UX — see 3.1)
 - **Issue:** `Dashboard`, `Layout`, `Login`, and `ui.jsx` use the semantic Tailwind tokens defined in
   `tailwind.config.js` (`panel-*`, `ink-*`, `st-*`). `Equipment`, `Maintenance`, `DataGaps`, and
@@ -159,6 +178,11 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
   different panel greys) and make any theming impossible.
 - **Suggested approach:** Migrate the four hex-based pages onto the semantic tokens. This is the
   prerequisite for user-selectable themes (3.1).
+- **What was done:** All four pages migrated onto `panel-*`/`ink-*`/`st-*`. Due-state and data-status color
+  maps remapped onto the token system (`Overdue`/`GAP` → `st-over`, `Due Soon`/`Field-verify` → `st-warn`,
+  `Scheduled`/`Unknown` → neutral `ink-*`/`panel-*`). Solid CTA buttons, the tab-switcher active state, and
+  the `Partial-GAP` orange accent were deliberately left as-is (no due-state semantic, or no token exists
+  yet for a "partial" state). The theme-preset half of this work (3.1) was explicitly not started.
 - **Effort:** Medium
 - **Priority:** Medium
 
@@ -349,7 +373,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 
 ## 3. UI/UX & visual design
 
-### 3.1 Should the theme be user-selectable? — Yes, after token consolidation
+### 3.1 Should the theme be user-selectable? — Yes, after token consolidation ⚠️ Partially fixed (token consolidation done 2026-07-02, presets not started)
 - **Area:** UI/UX & visual design
 - **Issue / opportunity:** Today theming is impossible: four pages hardcode hex values (see 1.5), so
   there is effectively one theme implemented two different ways. But the user base genuinely spans two

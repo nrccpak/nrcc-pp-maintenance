@@ -28,41 +28,41 @@ const HIST_PAGE_SIZE = 25
 
 const COLORS = {
   'Overdue':  {
-    pill:  'bg-red-900/30 text-red-400 border border-red-800/60',
-    hdr:   'text-red-400',
-    dot:   'bg-red-500',
-    sel:   'border-l-red-700',
-    urg:   'text-red-400',
+    pill:  'bg-st-over/10 text-st-over border border-st-over/40',
+    hdr:   'text-st-over',
+    dot:   'bg-st-over',
+    sel:   'border-l-st-over',
+    urg:   'text-st-over',
   },
   'Due Soon': {
-    pill:  'bg-amber-900/30 text-amber-400 border border-amber-800/60',
-    hdr:   'text-amber-400',
-    dot:   'bg-amber-500',
-    sel:   'border-l-amber-600',
-    urg:   'text-amber-400',
+    pill:  'bg-st-warn/10 text-st-warn border border-st-warn/40',
+    hdr:   'text-st-warn',
+    dot:   'bg-st-warn',
+    sel:   'border-l-st-warn',
+    urg:   'text-st-warn',
   },
   'Scheduled':{
-    pill:  'bg-blue-900/30 text-blue-400 border border-blue-800/60',
-    hdr:   'text-blue-400',
-    dot:   'bg-blue-500',
-    sel:   'border-l-blue-700',
-    urg:   'text-blue-400',
+    pill:  'bg-panel-raised text-ink-mid border border-panel-line2',
+    hdr:   'text-ink-mid',
+    dot:   'bg-ink-lo',
+    sel:   'border-l-panel-line2',
+    urg:   'text-ink-mid',
   },
   'Unknown':  {
-    pill:  'bg-gray-800 text-gray-500 border border-gray-700',
-    hdr:   'text-gray-500',
-    dot:   'bg-gray-600',
-    sel:   'border-l-gray-600',
-    urg:   'text-gray-500',
+    pill:  'bg-panel-raised text-ink-lo border border-panel-line2',
+    hdr:   'text-ink-lo',
+    dot:   'bg-st-idle',
+    sel:   'border-l-panel-line2',
+    urg:   'text-ink-lo',
   },
 }
 
 /* ── sub-components ───────────────────────────────────────────────────── */
 function InfoTile({ label, value, mono = true }) {
   return (
-    <div className="bg-[#0e1116] rounded-lg p-3 border border-[#21262d]">
-      <div className="text-[9px] text-gray-600 uppercase tracking-widest mb-1">{label}</div>
-      <div className={`text-gray-200 text-sm ${mono ? 'font-mono' : ''}`}>{value ?? '—'}</div>
+    <div className="bg-panel-bg rounded-lg p-3 border border-panel-line">
+      <div className="text-[9px] text-ink-lo uppercase tracking-widest mb-1">{label}</div>
+      <div className={`text-ink-hi text-sm ${mono ? 'font-mono' : ''}`}>{value ?? '—'}</div>
     </div>
   )
 }
@@ -307,9 +307,9 @@ export default function Maintenance() {
 
   /* ── render ──────────────────────────────────────────────────────── */
   if (loading) return (
-    <div className="flex items-center justify-center h-64 text-gray-500">
+    <div className="flex items-center justify-center h-64 text-ink-lo">
       <div className="text-center">
-        <div className="w-6 h-6 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
+        <div className="w-6 h-6 border-2 border-panel-line2 border-t-ink-mid rounded-full animate-spin mx-auto mb-3" />
         <div className="text-sm">Loading maintenance tasks…</div>
       </div>
     </div>
@@ -322,8 +322,8 @@ export default function Maintenance() {
       <div className={`flex flex-col flex-1 min-w-0 transition-all duration-200 ${selected && activeTab === 'tasks' ? 'pr-[26rem]' : ''}`}>
 
         <div className="mb-5">
-          <h1 className="text-2xl font-bold text-white tracking-tight">Maintenance Board</h1>
-          <p className="text-gray-400 text-sm mt-0.5">
+          <h1 className="text-2xl font-bold text-ink-hi tracking-tight">Maintenance Board</h1>
+          <p className="text-ink-mid text-sm mt-0.5">
             {activeTab === 'tasks'
               ? `${tasks.length} scheduled tasks · hours-based and calendar-based`
               : `${allHistory.length} history records · search across all equipment`}
@@ -331,18 +331,18 @@ export default function Maintenance() {
         </div>
 
         {/* tab switcher */}
-        <div className="flex gap-1 mb-5 bg-[#161b22] border border-[#30363d] rounded-lg p-1 w-fit">
+        <div className="flex gap-1 mb-5 bg-panel-surface border border-panel-line2 rounded-lg p-1 w-fit">
           <button
             onClick={() => setActiveTab('tasks')}
             className={`px-3.5 py-1.5 text-sm rounded-md transition-colors ${
-              activeTab === 'tasks' ? 'bg-[#0d1b2a] text-blue-400' : 'text-gray-400 hover:text-gray-200'
+              activeTab === 'tasks' ? 'bg-[#0d1b2a] text-blue-400' : 'text-ink-mid hover:text-ink-hi'
             }`}>
             Maintenance Board
           </button>
           <button
             onClick={() => setActiveTab('history')}
             className={`px-3.5 py-1.5 text-sm rounded-md transition-colors ${
-              activeTab === 'history' ? 'bg-[#0d1b2a] text-blue-400' : 'text-gray-400 hover:text-gray-200'
+              activeTab === 'history' ? 'bg-[#0d1b2a] text-blue-400' : 'text-ink-mid hover:text-ink-hi'
             }`}>
             History Log
           </button>
@@ -367,16 +367,16 @@ export default function Maintenance() {
             placeholder="Search equipment, component, task…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="bg-[#161b22] border border-[#30363d] text-gray-200 placeholder-gray-600
+            className="bg-panel-surface border border-panel-line2 text-ink-hi placeholder-ink-lo
                        rounded px-3 py-1.5 text-sm w-72 focus:outline-none focus:border-blue-500/70"
           />
           <select value={filterLine} onChange={e => setFilterLine(e.target.value)}
-            className="bg-[#161b22] border border-[#30363d] text-gray-300 rounded px-3 py-1.5 text-sm">
+            className="bg-panel-surface border border-panel-line2 text-ink-mid rounded px-3 py-1.5 text-sm">
             <option value="">All Lines</option>
             {['Line-1', 'Line-2', 'Common'].map(l => <option key={l}>{l}</option>)}
           </select>
           <select value={filterBasis} onChange={e => setFilterBasis(e.target.value)}
-            className="bg-[#161b22] border border-[#30363d] text-gray-300 rounded px-3 py-1.5 text-sm">
+            className="bg-panel-surface border border-panel-line2 text-ink-mid rounded px-3 py-1.5 text-sm">
             <option value="">All Intervals</option>
             <option value="Hours">Hours-based</option>
             <option value="Calendar">Calendar-based</option>
@@ -384,7 +384,7 @@ export default function Maintenance() {
           {(search || filterLine || filterBasis) && (
             <button
               onClick={() => { setSearch(''); setFilterLine(''); setFilterBasis('') }}
-              className="text-xs text-gray-500 hover:text-gray-200 underline underline-offset-2">
+              className="text-xs text-ink-lo hover:text-ink-hi underline underline-offset-2">
               Clear
             </button>
           )}
@@ -398,28 +398,28 @@ export default function Maintenance() {
             const c = COLORS[key]
             const open = !collapsed[key]
             return (
-              <div key={key} className="bg-[#161b22] border border-[#30363d] rounded-lg overflow-hidden">
+              <div key={key} className="bg-panel-surface border border-panel-line2 rounded-lg overflow-hidden">
 
                 {/* section header */}
                 <button
                   onClick={() => toggleGroup(key)}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#1c2128] transition-colors">
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-panel-raised transition-colors">
                   <div className="flex items-center gap-2.5">
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${c.dot}`} />
                     <span className={`text-sm font-semibold ${c.hdr}`}>{key}</span>
-                    <span className="text-xs text-gray-600 font-mono">
+                    <span className="text-xs text-ink-lo font-mono">
                       {items.length} task{items.length !== 1 ? 's' : ''}
                     </span>
                   </div>
-                  <span className="text-gray-600 text-xs">{open ? '▾' : '▸'}</span>
+                  <span className="text-ink-lo text-xs">{open ? '▾' : '▸'}</span>
                 </button>
 
                 {/* section rows */}
                 {open && (
-                  <div className="border-t border-[#30363d]">
+                  <div className="border-t border-panel-line2">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-[10px] text-gray-600 uppercase tracking-widest border-b border-[#21262d]">
+                        <tr className="text-[10px] text-ink-lo uppercase tracking-widest border-b border-panel-line">
                           <th className="text-left px-4 py-2 font-medium">Equipment</th>
                           <th className="text-left px-4 py-2 font-medium">Task</th>
                           <th className="text-left px-4 py-2 font-medium w-24">Interval</th>
@@ -434,24 +434,24 @@ export default function Maintenance() {
                             <tr
                               key={t.id}
                               onClick={() => setSelected(isSel ? null : t)}
-                              className={`border-b border-[#1c2128] cursor-pointer transition-colors border-l-2
+                              className={`border-b border-panel-line cursor-pointer transition-colors border-l-2
                                 ${isSel
-                                  ? `bg-[#0d1b2a] ${c.sel}`
-                                  : `border-l-transparent ${i % 2 === 0 ? 'hover:bg-[#1c2128]' : 'bg-[#0d1117]/20 hover:bg-[#1c2128]'}`
+                                  ? `bg-panel-raised ${c.sel}`
+                                  : `border-l-transparent ${i % 2 === 0 ? 'hover:bg-panel-raised' : 'bg-panel-bg/40 hover:bg-panel-raised'}`
                                 }`}
                             >
                               <td className="px-4 py-2.5">
-                                <div className="text-gray-100 font-medium text-sm leading-tight">{t.equipment}</div>
-                                <div className="text-gray-500 text-[10px] font-mono mt-0.5">{t.line} · {t.component_type}</div>
+                                <div className="text-ink-hi font-medium text-sm leading-tight">{t.equipment}</div>
+                                <div className="text-ink-lo text-[10px] font-mono mt-0.5">{t.line} · {t.component_type}</div>
                               </td>
                               <td className="px-4 py-2.5">
-                                <div className="text-gray-300 text-sm truncate max-w-[220px]" title={t.task_name}>{t.task_name}</div>
+                                <div className="text-ink-mid text-sm truncate max-w-[220px]" title={t.task_name}>{t.task_name}</div>
                               </td>
-                              <td className="px-4 py-2.5 text-gray-500 text-xs">{t.interval_basis}</td>
+                              <td className="px-4 py-2.5 text-ink-lo text-xs">{t.interval_basis}</td>
                               <td className="px-4 py-2.5">
                                 <span className={`text-xs font-mono ${c.urg}`}>{urgencyDisplay(t)}</span>
                               </td>
-                              <td className="px-4 py-2.5 text-gray-400 text-xs font-mono whitespace-nowrap">
+                              <td className="px-4 py-2.5 text-ink-mid text-xs font-mono whitespace-nowrap">
                                 {t.next_due_hours
                                   ? `${Number(t.next_due_hours).toLocaleString()} hrs`
                                   : t.next_due_date || '—'}
@@ -472,7 +472,7 @@ export default function Maintenance() {
           )}
 
           {!loadError && filtered.length === 0 && !loading && (
-            <div className="text-center py-16 text-gray-600 text-sm">
+            <div className="text-center py-16 text-ink-lo text-sm">
               No tasks match your filters.
             </div>
           )}
@@ -489,23 +489,23 @@ export default function Maintenance() {
                 placeholder="Search equipment, component, description…"
                 value={histSearch}
                 onChange={e => setHistSearch(e.target.value)}
-                className="bg-[#161b22] border border-[#30363d] text-gray-200 placeholder-gray-600
+                className="bg-panel-surface border border-panel-line2 text-ink-hi placeholder-ink-lo
                            rounded px-3 py-1.5 text-sm w-72 focus:outline-none focus:border-blue-500/70"
               />
               <select value={histFilterLine} onChange={e => setHistFilterLine(e.target.value)}
-                className="bg-[#161b22] border border-[#30363d] text-gray-300 rounded px-3 py-1.5 text-sm">
+                className="bg-panel-surface border border-panel-line2 text-ink-mid rounded px-3 py-1.5 text-sm">
                 <option value="">All Lines</option>
                 {['Line-1', 'Line-2', 'Common'].map(l => <option key={l}>{l}</option>)}
               </select>
               <select value={histFilterCategory} onChange={e => setHistFilterCategory(e.target.value)}
-                className="bg-[#161b22] border border-[#30363d] text-gray-300 rounded px-3 py-1.5 text-sm">
+                className="bg-panel-surface border border-panel-line2 text-ink-mid rounded px-3 py-1.5 text-sm">
                 <option value="">All Categories</option>
                 {['Routine Maintenance', 'Defect', 'PMS', 'CBM', 'Routine analysis', 'Weekly', 'Overhaul', 'Other'].map(c => <option key={c}>{c}</option>)}
               </select>
               {(histSearch || histFilterLine || histFilterCategory) && (
                 <button
                   onClick={() => { setHistSearch(''); setHistFilterLine(''); setHistFilterCategory('') }}
-                  className="text-xs text-gray-500 hover:text-gray-200 underline underline-offset-2">
+                  className="text-xs text-ink-lo hover:text-ink-hi underline underline-offset-2">
                   Clear
                 </button>
               )}
@@ -513,24 +513,24 @@ export default function Maintenance() {
 
             {/* history table */}
             {historyListLoading ? (
-              <div className="flex items-center justify-center h-48 text-gray-500">
+              <div className="flex items-center justify-center h-48 text-ink-lo">
                 <div className="text-center">
-                  <div className="w-6 h-6 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
+                  <div className="w-6 h-6 border-2 border-panel-line2 border-t-ink-mid rounded-full animate-spin mx-auto mb-3" />
                   <div className="text-sm">Loading history…</div>
                 </div>
               </div>
             ) : histLoadError ? (
               <ErrorBanner message={histLoadError} onRetry={loadAllHistory} />
             ) : histFiltered.length === 0 ? (
-              <div className="text-center py-16 text-gray-600 text-sm">
+              <div className="text-center py-16 text-ink-lo text-sm">
                 No history records match your filters.
               </div>
             ) : (
               <>
-                <div className="bg-[#161b22] border border-[#30363d] rounded-lg overflow-hidden">
+                <div className="bg-panel-surface border border-panel-line2 rounded-lg overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-[10px] text-gray-600 uppercase tracking-widest border-b border-[#21262d]">
+                      <tr className="text-[10px] text-ink-lo uppercase tracking-widest border-b border-panel-line">
                         <th className="text-left px-4 py-2 font-medium w-28">Date</th>
                         <th className="text-left px-4 py-2 font-medium">Equipment</th>
                         <th className="text-left px-4 py-2 font-medium w-24">Run Hrs</th>
@@ -545,27 +545,27 @@ export default function Maintenance() {
                           <tr
                             key={h.id}
                             onClick={() => setExpandedHistId(isOpen ? null : h.id)}
-                            className={`border-b border-[#1c2128] cursor-pointer transition-colors
-                              ${isOpen ? 'bg-[#0d1b2a]' : i % 2 === 0 ? 'hover:bg-[#1c2128]' : 'bg-[#0d1117]/20 hover:bg-[#1c2128]'}`}
+                            className={`border-b border-panel-line cursor-pointer transition-colors
+                              ${isOpen ? 'bg-panel-raised' : i % 2 === 0 ? 'hover:bg-panel-raised' : 'bg-panel-bg/40 hover:bg-panel-raised'}`}
                           >
-                            <td className="px-4 py-2.5 text-gray-500 text-xs font-mono whitespace-nowrap">
+                            <td className="px-4 py-2.5 text-ink-lo text-xs font-mono whitespace-nowrap">
                               {h.work_date || h.work_date_text || '—'}
                             </td>
                             <td className="px-4 py-2.5">
-                              <div className="text-gray-100 font-medium text-sm leading-tight">{h.equipment || '—'}</div>
-                              <div className="text-gray-500 text-[10px] font-mono mt-0.5">{h.line} · {h.component_type}</div>
+                              <div className="text-ink-hi font-medium text-sm leading-tight">{h.equipment || '—'}</div>
+                              <div className="text-ink-lo text-[10px] font-mono mt-0.5">{h.line} · {h.component_type}</div>
                             </td>
-                            <td className="px-4 py-2.5 text-gray-400 text-xs font-mono">
+                            <td className="px-4 py-2.5 text-ink-mid text-xs font-mono">
                               {h.run_hours ? Number(h.run_hours).toLocaleString() : '—'}
                             </td>
                             <td className="px-4 py-2.5">
                               {h.work_category && (
-                                <span className="text-[9px] bg-[#1c2128] text-gray-500 px-1.5 py-0.5 rounded font-mono">
+                                <span className="text-[9px] bg-panel-raised text-ink-lo px-1.5 py-0.5 rounded font-mono">
                                   {h.work_category}
                                 </span>
                               )}
                             </td>
-                            <td className="px-4 py-2.5 text-gray-300 text-xs leading-relaxed">
+                            <td className="px-4 py-2.5 text-ink-mid text-xs leading-relaxed">
                               <div className={isOpen ? '' : 'truncate max-w-[420px]'} title={isOpen ? undefined : h.work_description}>
                                 {h.work_description}
                               </div>
@@ -578,7 +578,7 @@ export default function Maintenance() {
                 </div>
 
                 {/* pagination */}
-                <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
+                <div className="flex items-center justify-between mt-4 text-xs text-ink-lo">
                   <div>
                     Showing {(histPageClamped - 1) * HIST_PAGE_SIZE + 1}
                     –{Math.min(histPageClamped * HIST_PAGE_SIZE, histFiltered.length)} of {histFiltered.length}
@@ -587,14 +587,14 @@ export default function Maintenance() {
                     <button
                       onClick={() => setHistPage(p => Math.max(1, p - 1))}
                       disabled={histPageClamped <= 1}
-                      className="px-2.5 py-1 border border-[#30363d] rounded hover:border-gray-500 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed">
+                      className="px-2.5 py-1 border border-panel-line2 rounded hover:border-ink-lo hover:text-ink-hi disabled:opacity-30 disabled:cursor-not-allowed">
                       ← Prev
                     </button>
                     <span className="font-mono">Page {histPageClamped} of {histTotalPages}</span>
                     <button
                       onClick={() => setHistPage(p => Math.min(histTotalPages, p + 1))}
                       disabled={histPageClamped >= histTotalPages}
-                      className="px-2.5 py-1 border border-[#30363d] rounded hover:border-gray-500 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed">
+                      className="px-2.5 py-1 border border-panel-line2 rounded hover:border-ink-lo hover:text-ink-hi disabled:opacity-30 disabled:cursor-not-allowed">
                       Next →
                     </button>
                   </div>
@@ -607,19 +607,19 @@ export default function Maintenance() {
 
       {/* ── DETAIL PANEL ─────────────────────────────────────────────── */}
       {selected && activeTab === 'tasks' && (
-        <div className="fixed right-0 top-0 h-full w-[26rem] bg-[#161b22] border-l border-[#30363d] flex flex-col z-20 shadow-2xl">
+        <div className="fixed right-0 top-0 h-full w-[26rem] bg-panel-surface border-l border-panel-line2 flex flex-col z-20 shadow-2xl">
 
           {/* header */}
-          <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-[#30363d] sticky top-0 bg-[#161b22]">
+          <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-panel-line2 sticky top-0 bg-panel-surface">
             <div className="flex-1 min-w-0 pr-3">
-              <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-1">
+              <div className="text-[10px] text-ink-lo font-mono uppercase tracking-widest mb-1">
                 {selected.line} · {selected.component_type}
               </div>
-              <div className="text-white font-semibold text-lg leading-tight">{selected.equipment}</div>
-              <div className="text-gray-400 text-sm mt-1 leading-snug">{selected.task_name}</div>
+              <div className="text-ink-hi font-semibold text-lg leading-tight">{selected.equipment}</div>
+              <div className="text-ink-mid text-sm mt-1 leading-snug">{selected.task_name}</div>
             </div>
             <button onClick={() => setSelected(null)}
-              className="text-gray-600 hover:text-gray-200 text-2xl leading-none mt-0.5 flex-shrink-0">
+              className="text-ink-lo hover:text-ink-hi text-2xl leading-none mt-0.5 flex-shrink-0">
               ×
             </button>
           </div>
@@ -629,12 +629,12 @@ export default function Maintenance() {
 
             {/* urgency banner */}
             <div className={`rounded-lg px-4 py-3 border ${
-              normalizeState(selected.due_state) === 'Overdue'  ? 'bg-red-950/40  border-red-900/50' :
-              normalizeState(selected.due_state) === 'Due Soon' ? 'bg-amber-950/40 border-amber-900/50' :
-              normalizeState(selected.due_state) === 'Scheduled'? 'bg-blue-950/30  border-blue-900/40' :
-              'bg-[#1c2128] border-[#30363d]'
+              normalizeState(selected.due_state) === 'Overdue'  ? 'bg-st-over/20  border-st-over/40' :
+              normalizeState(selected.due_state) === 'Due Soon' ? 'bg-st-warn/20 border-st-warn/40' :
+              normalizeState(selected.due_state) === 'Scheduled'? 'bg-panel-raised border-panel-line2' :
+              'bg-panel-raised border-panel-line2'
             }`}>
-              <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Urgency</div>
+              <div className="text-[9px] text-ink-lo uppercase tracking-widest mb-1">Urgency</div>
               <div className={`font-mono font-bold text-base ${COLORS[normalizeState(selected.due_state)].urg}`}>
                 {urgencyDisplay(selected)}
               </div>
@@ -658,8 +658,8 @@ export default function Maintenance() {
             {/* last done */}
             {taskDetail && (taskDetail.last_done_hours || taskDetail.last_done_date) && (
               <div>
-                <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Last Done</div>
-                <div className="text-gray-300 text-sm font-mono">
+                <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-1">Last Done</div>
+                <div className="text-ink-mid text-sm font-mono">
                   {taskDetail.last_done_hours ? fmtHours(taskDetail.last_done_hours) : ''}
                   {taskDetail.last_done_date  ? ` · ${taskDetail.last_done_date}` : ''}
                 </div>
@@ -668,41 +668,41 @@ export default function Maintenance() {
 
             {taskDetail?.remarks && (
               <div>
-                <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Remarks</div>
-                <div className="text-gray-400 text-sm">{taskDetail.remarks}</div>
+                <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-1">Remarks</div>
+                <div className="text-ink-mid text-sm">{taskDetail.remarks}</div>
               </div>
             )}
 
-            <div className="border-t border-[#21262d] my-1" />
+            <div className="border-t border-panel-line my-1" />
 
             {/* maintenance history */}
             <div>
-              <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-3">
+              <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-3">
                 Maintenance History
               </div>
 
               {historyLoading ? (
-                <div className="text-xs text-gray-600 text-center py-6">Loading history…</div>
+                <div className="text-xs text-ink-lo text-center py-6">Loading history…</div>
               ) : history.length === 0 ? (
-                <div className="text-xs text-gray-600 italic text-center py-6">
+                <div className="text-xs text-ink-lo italic text-center py-6">
                   No history records for this component.
                 </div>
               ) : (
                 <div className="space-y-2">
                   {history.map(h => (
-                    <div key={h.id} className="bg-[#0e1116] rounded-lg p-3 border border-[#21262d]">
+                    <div key={h.id} className="bg-panel-bg rounded-lg p-3 border border-panel-line">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] text-gray-500 font-mono">
+                        <span className="text-[10px] text-ink-lo font-mono">
                           {h.work_date}
                           {h.run_hours ? ` · ${Number(h.run_hours).toLocaleString()} hrs` : ''}
                         </span>
                         {h.work_category && (
-                          <span className="text-[9px] bg-[#1c2128] text-gray-500 px-1.5 py-0.5 rounded font-mono">
+                          <span className="text-[9px] bg-panel-raised text-ink-lo px-1.5 py-0.5 rounded font-mono">
                             {h.work_category}
                           </span>
                         )}
                       </div>
-                      <div className="text-gray-300 text-xs leading-relaxed">{h.work_description}</div>
+                      <div className="text-ink-mid text-xs leading-relaxed">{h.work_description}</div>
                     </div>
                   ))}
                 </div>
@@ -711,11 +711,11 @@ export default function Maintenance() {
           </div>
 
           {/* footer */}
-          <div className="px-5 py-4 border-t border-[#30363d] sticky bottom-0 bg-[#161b22]">
+          <div className="px-5 py-4 border-t border-panel-line2 sticky bottom-0 bg-panel-surface">
             <button
               onClick={() => { setModal(true); setLogError('') }}
-              className="w-full bg-emerald-900/25 hover:bg-emerald-900/50 border border-emerald-800/50
-                         hover:border-emerald-600/70 text-emerald-400 hover:text-emerald-300
+              className="w-full bg-st-run/10 hover:bg-st-run/20 border border-st-run/40
+                         hover:border-st-run/60 text-st-run
                          text-sm font-medium py-2.5 rounded transition-colors">
               ✓ Log Completion
             </button>
@@ -729,11 +729,11 @@ export default function Maintenance() {
           className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
           onClick={e => { if (e.target === e.currentTarget) { setModal(false); setLogError('') } }}
         >
-          <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-md mx-4 shadow-2xl">
+          <div className="bg-panel-surface border border-panel-line2 rounded-xl w-full max-w-md mx-4 shadow-2xl">
 
-            <div className="px-6 pt-6 pb-4 border-b border-[#30363d]">
-              <div className="text-white font-semibold text-base">Log Completion</div>
-              <div className="text-gray-400 text-sm mt-0.5 leading-snug">
+            <div className="px-6 pt-6 pb-4 border-b border-panel-line2">
+              <div className="text-ink-hi font-semibold text-base">Log Completion</div>
+              <div className="text-ink-mid text-sm mt-0.5 leading-snug">
                 {selected.equipment} · {selected.task_name}
               </div>
             </div>
@@ -743,7 +743,7 @@ export default function Maintenance() {
               {/* hours or date input */}
               {selected.interval_basis === 'Hours' ? (
                 <div>
-                  <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
+                  <label className="block text-[10px] text-ink-lo uppercase tracking-widest mb-2">
                     Run Hours at Completion
                   </label>
                   <input
@@ -753,11 +753,11 @@ export default function Maintenance() {
                     placeholder={selected.current_hours
                       ? `Current reading: ${Number(selected.current_hours).toLocaleString()}`
                       : 'Enter run hours…'}
-                    className="w-full bg-[#0e1116] border border-[#30363d] text-gray-200 rounded
+                    className="w-full bg-panel-bg border border-panel-line2 text-ink-hi rounded
                                px-3 py-2 text-sm font-mono focus:outline-none focus:border-blue-500/70"
                   />
                   {nextDue && (
-                    <div className="mt-2 text-xs text-gray-500">
+                    <div className="mt-2 text-xs text-ink-lo">
                       Next due will be set to{' '}
                       <span className="text-blue-400 font-mono">{nextDue.next_due_hours_fmt}</span>
                     </div>
@@ -765,18 +765,18 @@ export default function Maintenance() {
                 </div>
               ) : (
                 <div>
-                  <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
+                  <label className="block text-[10px] text-ink-lo uppercase tracking-widest mb-2">
                     Completion Date
                   </label>
                   <input
                     type="date"
                     value={logDate}
                     onChange={e => setLogDate(e.target.value)}
-                    className="w-full bg-[#0e1116] border border-[#30363d] text-gray-200 rounded
+                    className="w-full bg-panel-bg border border-panel-line2 text-ink-hi rounded
                                px-3 py-2 text-sm focus:outline-none focus:border-blue-500/70"
                   />
                   {nextDue && (
-                    <div className="mt-2 text-xs text-gray-500">
+                    <div className="mt-2 text-xs text-ink-lo">
                       Next due will be set to{' '}
                       <span className="text-blue-400 font-mono">{nextDue.next_due_date_fmt}</span>
                     </div>
@@ -787,14 +787,14 @@ export default function Maintenance() {
               {/* date field for hours-based tasks */}
               {selected.interval_basis === 'Hours' && (
                 <div>
-                  <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
+                  <label className="block text-[10px] text-ink-lo uppercase tracking-widest mb-2">
                     Completion Date
                   </label>
                   <input
                     type="date"
                     value={logDate}
                     onChange={e => setLogDate(e.target.value)}
-                    className="w-full bg-[#0e1116] border border-[#30363d] text-gray-200 rounded
+                    className="w-full bg-panel-bg border border-panel-line2 text-ink-hi rounded
                                px-3 py-2 text-sm focus:outline-none focus:border-blue-500/70"
                   />
                 </div>
@@ -802,28 +802,28 @@ export default function Maintenance() {
 
               {/* work description */}
               <div>
-                <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
+                <label className="block text-[10px] text-ink-lo uppercase tracking-widest mb-2">
                   Work Description{' '}
-                  <span className="text-gray-700 normal-case">(optional)</span>
+                  <span className="text-ink-lo normal-case">(optional)</span>
                 </label>
                 <textarea
                   value={logDesc}
                   onChange={e => setLogDesc(e.target.value)}
                   rows={3}
                   placeholder="Describe the work performed…"
-                  className="w-full bg-[#0e1116] border border-[#30363d] text-gray-200 rounded
+                  className="w-full bg-panel-bg border border-panel-line2 text-ink-hi rounded
                              px-3 py-2 text-sm resize-none focus:outline-none focus:border-blue-500/70"
                 />
               </div>
 
               {logError && (
-                <div className="text-xs text-red-400 bg-red-900/20 border border-red-800/40 rounded px-3 py-2.5">
+                <div className="text-xs text-st-over bg-st-over/10 border border-st-over/40 rounded px-3 py-2.5">
                   {logError}
                 </div>
               )}
             </div>
 
-            <div className="px-6 py-4 border-t border-[#30363d] flex gap-2">
+            <div className="px-6 py-4 border-t border-panel-line2 flex gap-2">
               <button
                 onClick={handleLogSave}
                 disabled={logSaving || !canSave()}
@@ -833,8 +833,8 @@ export default function Maintenance() {
               </button>
               <button
                 onClick={() => { setModal(false); setLogError('') }}
-                className="px-4 text-sm text-gray-400 hover:text-white
-                           border border-[#30363d] hover:border-gray-500 rounded transition-colors">
+                className="px-4 text-sm text-ink-mid hover:text-ink-hi
+                           border border-panel-line2 hover:border-ink-lo rounded transition-colors">
                 Cancel
               </button>
             </div>

@@ -24,8 +24,8 @@ function isOverdue(row) {
 /* ── sub-components ──────────────────────────────────────────────────── */
 function KpiTile({ label, value, accent }) {
   return (
-    <div className="bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-3">
-      <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">{label}</div>
+    <div className="bg-panel-surface border border-panel-line2 rounded-lg px-4 py-3">
+      <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-1">{label}</div>
       <div className={`font-mono text-2xl font-bold ${accent}`}>{value}</div>
     </div>
   )
@@ -37,7 +37,7 @@ function OverdueCell({ row }) {
       <span
         title={row.remarks || 'Currently under maintenance'}
         className="inline-block px-2 py-0.5 rounded text-xs font-mono whitespace-nowrap
-                   bg-amber-900/30 text-amber-400 border border-amber-800/60 cursor-help"
+                   bg-st-warn/10 text-st-warn border border-st-warn/40 cursor-help"
       >
         Under Maintenance
       </span>
@@ -45,20 +45,20 @@ function OverdueCell({ row }) {
   }
   const overdue = Number(row.overdue_hours)
   if (overdue > 0) {
-    return <span className="font-mono font-bold text-red-400">{overdue.toLocaleString()} hrs</span>
+    return <span className="font-mono font-bold text-st-over">{overdue.toLocaleString()} hrs</span>
   }
-  return <span className="font-mono text-gray-600">—</span>
+  return <span className="font-mono text-ink-lo">—</span>
 }
 
 function OverhaulTable({ title, rows }) {
   return (
-    <div className="bg-[#161b22] border border-[#30363d] rounded-lg overflow-hidden">
-      <div className="px-4 py-3 border-b border-[#30363d]">
-        <span className="text-sm font-semibold text-gray-200">{title}</span>
+    <div className="bg-panel-surface border border-panel-line2 rounded-lg overflow-hidden">
+      <div className="px-4 py-3 border-b border-panel-line2">
+        <span className="text-sm font-semibold text-ink-hi">{title}</span>
       </div>
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-[10px] text-gray-600 uppercase tracking-widest border-b border-[#21262d]">
+          <tr className="text-[10px] text-ink-lo uppercase tracking-widest border-b border-panel-line">
             <th className="text-left px-4 py-2 font-medium">DG No.</th>
             <th className="text-left px-4 py-2 font-medium">Current Running Hrs</th>
             <th className="text-left px-4 py-2 font-medium">Last Major O/H Hrs</th>
@@ -72,18 +72,18 @@ function OverhaulTable({ title, rows }) {
               <tr
                 key={`${row.line}|${row.equipment}|${row.component_type}`}
                 title={row.remarks || undefined}
-                className={`border-b border-[#1c2128] border-l-2 transition-colors
-                  ${overdue ? 'border-l-red-700' : 'border-l-transparent'}
-                  ${i % 2 === 0 ? 'hover:bg-[#1c2128]' : 'bg-[#0d1117]/20 hover:bg-[#1c2128]'}`}
+                className={`border-b border-panel-line border-l-2 transition-colors
+                  ${overdue ? 'border-l-st-over' : 'border-l-transparent'}
+                  ${i % 2 === 0 ? 'hover:bg-panel-raised' : 'bg-panel-bg/40 hover:bg-panel-raised'}`}
               >
                 <td className="px-4 py-2.5">
-                  <div className="text-gray-100 font-medium text-sm leading-tight">{row.equipment}</div>
-                  <div className="text-gray-500 text-[10px] font-mono mt-0.5">{row.line}</div>
+                  <div className="text-ink-hi font-medium text-sm leading-tight">{row.equipment}</div>
+                  <div className="text-ink-lo text-[10px] font-mono mt-0.5">{row.line}</div>
                 </td>
-                <td className="px-4 py-2.5 text-gray-300 text-sm font-mono">
+                <td className="px-4 py-2.5 text-ink-mid text-sm font-mono">
                   {fmtHours(row.current_running_hours)}
                 </td>
-                <td className="px-4 py-2.5 text-gray-400 text-sm font-mono">
+                <td className="px-4 py-2.5 text-ink-mid text-sm font-mono">
                   {fmtHours(row.last_done_hours)}
                 </td>
                 <td className="px-4 py-2.5">
@@ -94,7 +94,7 @@ function OverhaulTable({ title, rows }) {
           })}
           {rows.length === 0 && (
             <tr>
-              <td colSpan={4} className="text-center py-10 text-gray-600 text-sm">
+              <td colSpan={4} className="text-center py-10 text-ink-lo text-sm">
                 No rows found.
               </td>
             </tr>
@@ -125,9 +125,9 @@ export default function MajorMaintenance() {
   useEffect(() => { load() }, [])
 
   if (loading) return (
-    <div className="flex items-center justify-center h-64 text-gray-500">
+    <div className="flex items-center justify-center h-64 text-ink-lo">
       <div className="text-center">
-        <div className="w-6 h-6 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
+        <div className="w-6 h-6 border-2 border-panel-line2 border-t-ink-mid rounded-full animate-spin mx-auto mb-3" />
         <div className="text-sm">Loading major overhaul status…</div>
       </div>
     </div>
@@ -151,17 +151,17 @@ export default function MajorMaintenance() {
 
       {/* header */}
       <div className="mb-5">
-        <h1 className="text-2xl font-bold text-white tracking-tight">Major Maintenance</h1>
-        <p className="text-gray-400 text-sm mt-0.5">
+        <h1 className="text-2xl font-bold text-ink-hi tracking-tight">Major Maintenance</h1>
+        <p className="text-ink-mid text-sm mt-0.5">
           12,000-hour major overhaul tracking — engines and turbochargers
         </p>
       </div>
 
       {/* KPI strip */}
       <div className="grid grid-cols-3 gap-3 mb-6 max-w-2xl">
-        <KpiTile label="Engines Overdue"        value={enginesOverdueCount}   accent={enginesOverdueCount > 0 ? 'text-red-400' : 'text-gray-300'} />
-        <KpiTile label="Turbochargers Overdue"   value={turbosOverdueCount}    accent={turbosOverdueCount > 0 ? 'text-red-400' : 'text-gray-300'} />
-        <KpiTile label="Under Maintenance"       value={underMaintenanceCount} accent={underMaintenanceCount > 0 ? 'text-amber-400' : 'text-gray-300'} />
+        <KpiTile label="Engines Overdue"        value={enginesOverdueCount}   accent={enginesOverdueCount > 0 ? 'text-st-over' : 'text-ink-mid'} />
+        <KpiTile label="Turbochargers Overdue"   value={turbosOverdueCount}    accent={turbosOverdueCount > 0 ? 'text-st-over' : 'text-ink-mid'} />
+        <KpiTile label="Under Maintenance"       value={underMaintenanceCount} accent={underMaintenanceCount > 0 ? 'text-st-warn' : 'text-ink-mid'} />
       </div>
 
       {/* tables */}

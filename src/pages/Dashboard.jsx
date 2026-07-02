@@ -189,7 +189,6 @@ function OverduePanel({ expanded, onExpand, onCollapse, panelRef }) {
         <thead>
           <tr className="text-[11px] uppercase tracking-wider text-ink-lo">
             <th className="px-4 py-2 text-left font-medium">Unit</th>
-            <th className="px-4 py-2 text-left font-medium">Component</th>
             <th className="px-4 py-2 text-left font-medium">Task</th>
             <th className="px-4 py-2 text-right font-medium">Current</th>
             <th className="px-4 py-2 text-right font-medium">Due at</th>
@@ -199,8 +198,10 @@ function OverduePanel({ expanded, onExpand, onCollapse, panelRef }) {
         <tbody>
           {shown.map((t, i) => (
             <tr key={t.id ?? i} className="border-t border-panel-line/60">
-              <td className="px-4 py-2 font-mono text-ink-hi">{t.equipment}</td>
-              <td className="px-4 py-2 font-mono text-xs text-ink-lo">{t.component_type}</td>
+              <td className="px-4 py-2 font-mono text-ink-hi">
+                {t.equipment}
+                <div className="text-[10px] font-sans text-ink-lo">{t.component_type}</div>
+              </td>
               <td className="px-4 py-2 text-ink-mid">{t.task_name}</td>
               <td className="px-4 py-2 text-right font-mono tnum text-ink-mid">{currentDisplay(t)}</td>
               <td className="px-4 py-2 text-right font-mono tnum text-ink-lo">{dueAtDisplay(t)}</td>
@@ -209,7 +210,7 @@ function OverduePanel({ expanded, onExpand, onCollapse, panelRef }) {
           ))}
           {shown.length === 0 && (
             <tr>
-              <td colSpan={6} className="px-4 py-6 text-center text-sm text-ink-lo">No overdue tasks.</td>
+              <td colSpan={5} className="px-4 py-6 text-center text-sm text-ink-lo">No overdue tasks.</td>
             </tr>
           )}
         </tbody>

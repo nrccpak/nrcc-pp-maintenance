@@ -29,7 +29,7 @@ function Field({ label, value }) {
 
 const PAGE_SIZE = 25
 
-const LINE_OPTIONS   = ['Line-1', 'Line-2', 'Common', 'Black Start']
+const LINE_OPTIONS   = ['Line-1', 'Line-2', 'Common']
 const STATUS_OPTIONS = ['Confirmed', 'Field-verify', 'GAP', 'Partial-GAP']
 
 export default function EquipmentRegistry() {
@@ -57,8 +57,8 @@ export default function EquipmentRegistry() {
 
   /* ── load reference data ──────────────────────────────────── */
   useEffect(() => {
-    supabase.from('systems').select('name').order('name')
-      .then(({ data }) => setSystems((data || []).map(r => r.name)))
+    supabase.from('systems').select('system_name').order('system_name')
+      .then(({ data }) => setSystems((data || []).map(r => r.system_name)))
 
     // status summary counts
     supabase.from('equipment').select('data_status')

@@ -7,6 +7,17 @@ function fmtHours(h) {
   return Number(h).toLocaleString('en-US', { maximumFractionDigits: 0 })
 }
 
+function fmtReadingDate(iso) {
+  if (!iso) return null
+  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function latestReadingIso(rows) {
+  const dates = (rows || []).map(r => r.status_as_of).filter(Boolean)
+  if (dates.length === 0) return null
+  return dates.reduce((max, d) => (d > max ? d : max))
+}
+
 function currentDisplay(t) {
   return t.interval_basis === 'Hours' && t.current_hours != null ? `${fmtHours(t.current_hours)} hrs` : '—'
 }
@@ -43,8 +54,7 @@ function KpiStrip({ onOverdueClick }) {
   )
 }
 
-function GensetGrid({ onSelectTasks }) {
-  const { data, loading } = useEquipmentStatus()
+function GensetGrid({ data, loading, onSelectTasks }) {
   if (loading || !data) return <Spinner label="Reading meters" />
 
   // engines first, then other hours-tracked items
@@ -238,11 +248,14 @@ export default function Dashboard() {
   const [overdueExpanded, setOverdueExpanded] = useState(false)
   const overdueRef = useRef(null)
   const [equipmentSelection, setEquipmentSelection] = useState(null)
+  const { data: equipmentData, loading: equipmentLoading } = useEquipmentStatus()
 
   const expandOverdue = () => {
     setOverdueExpanded(true)
     overdueRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
+
+  const readingsAsOf = fmtReadingDate(latestReadingIso(equipmentData))
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-6">
@@ -251,12 +264,18 @@ export default function Dashboard() {
           <h1 className="text-lg font-semibold text-ink-hi">Plant Status</h1>
           <p className="text-sm text-ink-lo">Equipment, running hours, and maintenance due</p>
         </div>
-        <div className="font-mono text-xs text-ink-lo">readings as of 29 Jun 2026</div>
+        <div className="font-mono text-xs text-ink-lo">
+          {readingsAsOf ? `readings as of ${readingsAsOf}` : equipmentLoading ? 'reading meters…' : ''}
+        </div>
       </header>
 
       <div className="mb-6"><KpiStrip onOverdueClick={expandOverdue} /></div>
       <div className="mb-6">
-        <GensetGrid onSelectTasks={(item, dueState) => setEquipmentSelection({ item, dueState })} />
+        <GensetGrid
+          data={equipmentData}
+          loading={equipmentLoading}
+          onSelectTasks={(item, dueState) => setEquipmentSelection({ item, dueState })}
+        />
       </div>
       <OverduePanel
         expanded={overdueExpanded}

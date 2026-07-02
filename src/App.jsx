@@ -9,7 +9,7 @@ import Login from './pages/Login'
 import { AuthProvider, useAuth } from './lib/AuthContext'
 
 function Gate({ children }) {
-  const { session, loading, signOut } = useAuth()
+  const { session, loading } = useAuth()
 
   if (loading) {
     return (
@@ -23,17 +23,7 @@ function Gate({ children }) {
     return <Login />
   }
 
-  return (
-    <>
-      <button
-        onClick={signOut}
-        className="fixed top-3 right-3 z-50 text-xs font-mono text-ink-mid hover:text-ink-hi bg-panel-surface border border-panel-line px-3 py-1 rounded"
-      >
-        Sign out
-      </button>
-      {children}
-    </>
-  )
+  return children
 }
 
 export default function App() {

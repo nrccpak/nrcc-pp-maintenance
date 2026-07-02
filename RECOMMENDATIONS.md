@@ -20,6 +20,31 @@
     `USING(true)`/`WITH CHECK(true)` WARNs on INSERT/UPDATE remain — fixing those for real requires
     `auth.uid()`-based ownership, which doesn't exist in this schema yet).
 
+- **✅ Done (2026-07-02):** 1.1, 1.2, 1.3, 2.1, 3.2, 3.4 — verified bug fixes.
+  - **1.1** `Maintenance.jsx` no longer writes `next_due_hours`/`next_due_date` (DB-generated columns) in
+    the completion update; also surfaces a history-insert failure instead of ignoring it, and fixes the
+    related stale-closure bug (1.8) so the detail panel re-selects from the freshly loaded task list.
+  - **1.2** `Equipment.jsx` now selects `system_name` (was `name`) — the System filter dropdown is populated.
+  - **1.3** Dashboard header date is now derived from the live data (`max(status_as_of)`), not hardcoded;
+    also removed a duplicate `useEquipmentStatus()` fetch by lifting it to the parent component.
+  - **2.1** DB migration `map_lube_oil_separator_hours_to_engine`: `v_maintenance_due` now maps
+    `Lube Oil Separator → Engine` the same way it already did for `Turbocharger`. All 9 previously-"Unknown"
+    Lube Oil Separator tasks now resolve correctly.
+    - **Caught in verification:** `CREATE OR REPLACE VIEW` silently reset `v_maintenance_due`'s
+      `security_invoker` flag from Step 1 back to default. Restored it immediately
+      (`restore_security_invoker_after_view_replace`) and re-verified anon-denied/authenticated-OK on all
+      5 views before moving on. Worth remembering for any future view migration: `security_invoker` does
+      not survive `CREATE OR REPLACE VIEW` and must be re-applied every time.
+  - **3.2** Sign-out moved from a floating `position:fixed` button (which sat on top of every detail
+    panel's close button) into the sidebar footer next to "Connected".
+  - **3.4** Line filter options are now `Line-1 / Line-2 / Common` everywhere (Equipment, Maintenance ×2,
+    Data Gaps) — "Black Start" (which matched zero rows) removed, "Common" added where missing.
+  - All verified via Playwright against the running app: real DOM options, an actual completion-flow
+    round-trip with the network payload captured and asserted (confirms the old bug would have failed the
+    same check), and the header date changing when the underlying mock data changes.
+  - **Not done:** the field-data collection half of 6.1 (16 tasks still need real baselines from
+    logbooks) and 6.2/6.3 (data corrections) — those need the ops team, not just code/schema changes.
+
 ---
 
 ## Executive summary — start here
@@ -31,11 +56,11 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 | # | Finding | Area | Priority |
 |---|---------|------|----------|
 | 1 | ✅ *Fixed* — All 5 views are readable by `anon` — the entire dataset is public despite the login page | Security | **High** |
-| 2 | "Log Completion" on the Maintenance Board always fails (writes to generated DB columns) | Code | **High** |
-| 3 | Equipment page "System" filter is permanently empty (`select('name')` vs column `system_name`) | Code | **High** |
-| 4 | 9 Lube Oil Separator tasks stuck in "Unknown" — view doesn't map their hours to the parent engine | Database | **High** |
-| 5 | Sign-out button overlaps and blocks the close button of every detail panel on 3 pages | UI/UX | **High** |
-| 6 | Dashboard header date "readings as of 29 Jun 2026" is hardcoded and will silently go stale | Code | **High** |
+| 2 | ✅ *Fixed* — "Log Completion" on the Maintenance Board always fails (writes to generated DB columns) | Code | **High** |
+| 3 | ✅ *Fixed* — Equipment page "System" filter is permanently empty (`select('name')` vs column `system_name`) | Code | **High** |
+| 4 | ✅ *Fixed* — 9 Lube Oil Separator tasks stuck in "Unknown" — view doesn't map their hours to the parent engine | Database | **High** |
+| 5 | ✅ *Fixed* — Sign-out button overlaps and blocks the close button of every detail panel on 3 pages | UI/UX | **High** |
+| 6 | ✅ *Fixed* — Dashboard header date "readings as of 29 Jun 2026" is hardcoded and will silently go stale | Code | **High** |
 | 7 | 25 maintenance tasks in "Unknown" state from missing baselines; 5 hour-meter regressions in the log | Data quality | **High** |
 | 8 | Schema has no committed migration history — the DB is unreproducible from the repo | Other | Medium |
 | 9 | Theme: consolidate the two coexisting styling systems first, then yes — offer 2–3 preset themes | UI/UX | Medium |
@@ -45,7 +70,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 
 ## 1. Code architecture & logic
 
-### 1.1 "Log Completion" is broken — writes to generated columns **[verified]**
+### 1.1 "Log Completion" is broken — writes to generated columns **[verified]** ✅ Fixed 2026-07-02
 - **Area:** Code architecture & logic (also Database)
 - **Issue:** `maintenance_status.next_due_hours` and `next_due_date` are **generated (STORED) columns**
   (`last_done_hours + interval_hours` / `last_done_date + interval_days`). `Maintenance.jsx`'s
@@ -60,7 +85,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Small
 - **Priority:** **High**
 
-### 1.2 Equipment page "System" filter is permanently empty **[verified]**
+### 1.2 Equipment page "System" filter is permanently empty **[verified]** ✅ Fixed 2026-07-02
 - **Area:** Code architecture & logic
 - **Issue:** `Equipment.jsx` runs `supabase.from('systems').select('name').order('name')`, but the table's
   column is `system_name` (verified against the live schema). The query errors, the error is discarded,
@@ -70,7 +95,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Small
 - **Priority:** **High**
 
-### 1.3 Hardcoded "readings as of 29 Jun 2026" in the Dashboard header
+### 1.3 Hardcoded "readings as of 29 Jun 2026" in the Dashboard header ✅ Fixed 2026-07-02
 - **Area:** Code architecture & logic
 - **Issue:** The date is a string literal in `Dashboard.jsx`. It happens to match the latest reading today;
   after the next meter reading it will be silently wrong — worse than no date on an ops dashboard.
@@ -125,7 +150,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Medium
 - **Priority:** Medium
 
-### 1.8 Stale-closure bug when re-selecting a task after completion
+### 1.8 Stale-closure bug when re-selecting a task after completion ✅ Fixed 2026-07-02 (fixed alongside 1.1)
 - **Area:** Code architecture & logic
 - **Issue:** In `Maintenance.jsx` `handleLogSave`, after `await loadTasks()` the code runs
   `setSelected(prev => tasks.find(t => t.id === prev.id) || prev)` — but `tasks` is the array captured at
@@ -193,7 +218,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 
 ## 2. Database & data model
 
-### 2.1 Lube Oil Separator tasks permanently "Unknown" — missing hours mapping **[verified]**
+### 2.1 Lube Oil Separator tasks permanently "Unknown" — missing hours mapping **[verified]** ✅ Fixed 2026-07-02
 - **Area:** Database & data model
 - **Issue:** The schema comment on `equipment_status_log` says *"Lube Oil Separator hours mirror the parent
   DG engine and are not logged separately"* — exactly like turbochargers. But `v_maintenance_due` only maps
@@ -311,7 +336,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Medium (step 1 is most of it; step 2 is small)
 - **Priority:** Medium
 
-### 3.2 Sign-out button blocks every detail panel's close button **[verified]**
+### 3.2 Sign-out button blocks every detail panel's close button **[verified]** ✅ Fixed 2026-07-02
 - **Area:** UI/UX & visual design
 - **Issue:** The fixed `Sign out` button (`z-50`, top-right) sits directly on top of the `×` close button
   of the `z-20` detail panels on Equipment, Maintenance, and Data Gaps. Verified during automated testing:
@@ -340,7 +365,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Medium
 - **Priority:** Medium–High
 
-### 3.4 Line filter options don't match the data **[verified]**
+### 3.4 Line filter options don't match the data **[verified]** ✅ Fixed 2026-07-02
 - **Area:** UI/UX & visual design
 - **Issue:** Live data contains exactly three lines: `Line-1` (218 rows), `Line-2` (109), `Common` (25).
   The Black Start DG lives under `Common`. Yet filter dropdowns offer a **"Black Start" option that matches

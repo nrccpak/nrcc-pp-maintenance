@@ -116,8 +116,10 @@ export default function Maintenance() {
     const { data } = await supabase
       .from('v_maintenance_due')
       .select('*')
-    setTasks(data || [])
+    const rows = data || []
+    setTasks(rows)
     setLoading(false)
+    return rows
   }
 
   useEffect(() => { loadTasks() }, [])
@@ -236,11 +238,13 @@ export default function Maintenance() {
     setLogSaving(true)
     setLogError('')
 
+    // next_due_hours/next_due_date are DB-generated columns (last_done + interval) —
+    // only the "last done" baseline is writable; the DB recomputes the rest.
     const updateData = {
       updated_at: new Date().toISOString(),
       ...(taskDetail.interval_basis === 'Hours'
-        ? { last_done_hours: parseFloat(logHours), next_due_hours: nextDue?.next_due_hours }
-        : { last_done_date: logDate,               next_due_date:  nextDue?.next_due_date  }),
+        ? { last_done_hours: parseFloat(logHours) }
+        : { last_done_date: logDate }),
     }
 
     const { error: updErr } = await supabase
@@ -256,7 +260,7 @@ export default function Maintenance() {
       return
     }
 
-    await supabase.from('maintenance_history').insert({
+    const { error: histErr } = await supabase.from('maintenance_history').insert({
       line:             selected.line,
       equipment:        selected.equipment,
       component_type:   selected.component_type,
@@ -268,16 +272,23 @@ export default function Maintenance() {
       source:           'Manual entry',
     })
 
+    if (histErr) {
+      setLogError(`Completion saved, but the history record failed to save: ${histErr.message}`)
+      setLogSaving(false)
+      await loadTasks()
+      return
+    }
+
     // refresh tasks + history
-    await loadTasks()
+    const freshTasks = await loadTasks()
     const { data: hist } = await supabase
       .from('maintenance_history').select('*')
       .eq('line', selected.line).eq('equipment', selected.equipment).eq('component_type', selected.component_type)
       .order('work_date', { ascending: false }).limit(8)
     setHistory(hist || [])
 
-    // re-select updated task from fresh list
-    setSelected(prev => tasks.find(t => t.id === prev.id) || prev)
+    // re-select updated task from the freshly loaded list
+    setSelected(prev => freshTasks.find(t => t.id === prev.id) || prev)
 
     // reset modal
     setModal(false)
@@ -355,7 +366,7 @@ export default function Maintenance() {
           <select value={filterLine} onChange={e => setFilterLine(e.target.value)}
             className="bg-[#161b22] border border-[#30363d] text-gray-300 rounded px-3 py-1.5 text-sm">
             <option value="">All Lines</option>
-            {['Line-1', 'Line-2', 'Black Start'].map(l => <option key={l}>{l}</option>)}
+            {['Line-1', 'Line-2', 'Common'].map(l => <option key={l}>{l}</option>)}
           </select>
           <select value={filterBasis} onChange={e => setFilterBasis(e.target.value)}
             className="bg-[#161b22] border border-[#30363d] text-gray-300 rounded px-3 py-1.5 text-sm">
@@ -473,7 +484,7 @@ export default function Maintenance() {
               <select value={histFilterLine} onChange={e => setHistFilterLine(e.target.value)}
                 className="bg-[#161b22] border border-[#30363d] text-gray-300 rounded px-3 py-1.5 text-sm">
                 <option value="">All Lines</option>
-                {['Line-1', 'Line-2', 'Common', 'Black Start'].map(l => <option key={l}>{l}</option>)}
+                {['Line-1', 'Line-2', 'Common'].map(l => <option key={l}>{l}</option>)}
               </select>
               <select value={histFilterCategory} onChange={e => setHistFilterCategory(e.target.value)}
                 className="bg-[#161b22] border border-[#30363d] text-gray-300 rounded px-3 py-1.5 text-sm">

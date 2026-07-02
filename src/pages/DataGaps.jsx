@@ -225,7 +225,7 @@ export default function DataGaps() {
           <select value={filterLine} onChange={e => setFilterLine(e.target.value)}
             className="bg-[#161b22] border border-[#30363d] text-gray-300 rounded px-3 py-1.5 text-sm">
             <option value="">All Lines</option>
-            {['Line-1', 'Line-2', 'Common', 'Black Start'].map(l => <option key={l}>{l}</option>)}
+            {['Line-1', 'Line-2', 'Common'].map(l => <option key={l}>{l}</option>)}
           </select>
           <select value={filterSystem} onChange={e => setFilterSystem(e.target.value)}
             className="bg-[#161b22] border border-[#30363d] text-gray-300 rounded px-3 py-1.5 text-sm">

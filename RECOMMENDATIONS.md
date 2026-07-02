@@ -45,6 +45,24 @@
   - **Not done:** the field-data collection half of 6.1 (16 tasks still need real baselines from
     logbooks) and 6.2/6.3 (data corrections) — those need the ops team, not just code/schema changes.
 
+- **✅ Done (2026-07-02):** 1.4, 1.11, 2.8/7.2 — foundations.
+  - **1.4** Every page now surfaces query failures instead of rendering a silent empty state (worst case
+    was Data Gaps: a failed load rendered as "All gaps cleared ✓"). Added a shared `ErrorBanner` component
+    and a `refetch()` on the `useQuery` hook; `useQuery` also now catches thrown exceptions, not just
+    `{error}` results. Verified across all 5 pages by injecting simulated backend failures for every query
+    — each now shows a clear message with a working Retry button.
+  - **1.11** Added `.github/workflows/ci.yml`: runs `oxlint` + `vite build` on every PR into `main` (and
+    on push to `main`). Vitest/Playwright test suites are still open — this is the "PR gate" half of the
+    suggested approach, not full coverage.
+  - **2.8 / 7.2** Added `supabase/migrations/20260702000000_baseline_schema.sql`, a hand-reconstructed
+    snapshot of the live schema (tables, indexes, RLS policies, views, grants) as of today, since the
+    Supabase CLI wasn't available to run a real `db pull`. Validated by applying it inside an isolated
+    schema on the live project and rolling back (see `supabase/README.md` for the exact method and the
+    caveat that it should still be checked with `supabase db diff` once the CLI is available). Going
+    forward, schema changes should be written as new files here instead of ad hoc `apply_migration` calls.
+  - **Not done:** 7.3 (error monitoring / Sentry) needs an external account and DSN — no MCP tool can
+    create one. Full Vitest/Playwright coverage for 1.11 also remains open.
+
 ---
 
 ## Executive summary — start here
@@ -62,9 +80,9 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 | 5 | ✅ *Fixed* — Sign-out button overlaps and blocks the close button of every detail panel on 3 pages | UI/UX | **High** |
 | 6 | ✅ *Fixed* — Dashboard header date "readings as of 29 Jun 2026" is hardcoded and will silently go stale | Code | **High** |
 | 7 | 25 maintenance tasks in "Unknown" state from missing baselines; 5 hour-meter regressions in the log | Data quality | **High** |
-| 8 | Schema has no committed migration history — the DB is unreproducible from the repo | Other | Medium |
+| 8 | ✅ *Fixed* — Schema has no committed migration history — the DB is unreproducible from the repo | Other | Medium |
 | 9 | Theme: consolidate the two coexisting styling systems first, then yes — offer 2–3 preset themes | UI/UX | Medium |
-| 10 | No error surfacing anywhere — failed queries render as convincing empty states | Code | Medium |
+| 10 | ✅ *Fixed* — No error surfacing anywhere — failed queries render as convincing empty states | Code | Medium |
 
 ---
 
@@ -104,7 +122,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Small
 - **Priority:** **High**
 
-### 1.4 Query errors are swallowed everywhere
+### 1.4 Query errors are swallowed everywhere ✅ Fixed 2026-07-02
 - **Area:** Code architecture & logic
 - **Issue:** Nearly every fetch destructures only `data` (`const { data } = await supabase...`). RLS
   denials, network failures, and schema mismatches (see 1.2) all render as plausible empty states
@@ -182,7 +200,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Medium
 - **Priority:** Low
 
-### 1.11 No tests and no CI quality gate
+### 1.11 No tests and no CI quality gate ⚠️ Partially fixed 2026-07-02 (CI lint/build gate added; Vitest/Playwright still open)
 - **Area:** Code architecture & logic
 - **Issue:** Zero test files; the only workflow deploys `main`. PRs get no lint/build check — 1.2 would
   have been caught by even a smoke test that renders each page against a mocked client.
@@ -299,7 +317,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Small
 - **Priority:** Low
 
-### 2.8 Schema lives only in the hosted DB (no migrations in repo)
+### 2.8 Schema lives only in the hosted DB (no migrations in repo) ✅ Fixed 2026-07-02
 - **Area:** Database & data model (also Other)
 - **Issue:** There is no `supabase/` directory; tables, views, RLS, and the two hotfix migrations applied
   via MCP exist only in the cloud project. The repo cannot rebuild its own backend; view changes (like the
@@ -593,7 +611,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Medium
 - **Priority:** **High** (product-wise; nothing else stays accurate without it)
 
-### 7.2 Commit the backend: migrations + seed in repo
+### 7.2 Commit the backend: migrations + seed in repo ✅ Fixed 2026-07-02 (migrations; seed/data export still open)
 - **Area:** Other
 - **Issue:** Same as 2.8, elevated here because it also affects disaster recovery: today a lost Supabase
   project = a lost backend. There is also no documented backup story beyond Supabase's own PITR tier.

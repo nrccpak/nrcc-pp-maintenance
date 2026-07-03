@@ -9,24 +9,25 @@ export default {
       },
       colors: {
         panel: {
-          bg: '#0e1116',      // deep control-room slate
-          surface: '#151a21',
-          raised: '#1b212a',
-          line: '#262d38',
-          line2: '#323a47',
+          bg: '#eef0f3',      // platinum page canvas
+          surface: '#ffffff',
+          raised: '#f5f6f8',
+          hover: '#e9ecf0',
+          line: '#dde1e7',
+          line2: '#c7cdd6',
         },
         ink: {
-          hi: '#e8edf4',
-          mid: '#9aa6b6',
-          lo: '#5f6b7c',
+          hi: '#1b2430',
+          mid: '#5b6472',
+          lo: '#707b8a',
         },
         st: {
-          run: '#34d399',     // running
-          standby: '#60a5fa', // standby
-          warn: '#fbbf24',     // due soon
-          over: '#f87171',     // overdue
-          trip: '#fb7185',     // tripped
-          idle: '#64748b',
+          run: '#16a34a',     // running
+          standby: '#2563eb', // standby
+          warn: '#d97706',     // due soon
+          over: '#dc2626',     // overdue
+          trip: '#e11d48',     // tripped
+          idle: '#94a3b8',
         },
       },
     },

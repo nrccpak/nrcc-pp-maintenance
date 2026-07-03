@@ -27,16 +27,35 @@ function KpiStrip({ onOverdueClick }) {
   if (loading || !data) return <div className="h-[76px]"><Spinner /></div>
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <MetricTile label="Equipment" value={data.totalEquipment} />
+      <MetricTile
+        label="Equipment"
+        value={data.totalEquipment}
+        barColor="border-l-blue-400"
+        dot="bg-blue-400"
+      />
       <MetricTile
         label="Overdue"
         value={data.overdue}
         accent="text-st-over"
+        barColor="border-l-st-over"
+        dot="bg-st-over"
         sub="maintenance tasks — click to view"
         onClick={onOverdueClick}
       />
-      <MetricTile label="Due Soon" value={data.dueSoon} accent="text-st-warn" />
-      <MetricTile label="Data Gaps" value={data.dataGaps} accent="text-ink-mid" />
+      <MetricTile
+        label="Due Soon"
+        value={data.dueSoon}
+        accent="text-st-warn"
+        barColor="border-l-st-warn"
+        dot="bg-st-warn"
+      />
+      <MetricTile
+        label="Data Gaps"
+        value={data.dataGaps}
+        accent="text-ink-mid"
+        barColor="border-l-panel-line2"
+        dot="bg-ink-lo"
+      />
     </div>
   )
 }
@@ -52,12 +71,12 @@ function GensetGrid({ onSelectTasks }) {
   const Card = ({ item }) => {
     const over = item.overdue_count > 0
     const dueSoon = item.due_soon_count > 0
-    const accent = over ? 'border-st-over/40' : dueSoon ? 'border-st-warn/30' : 'border-panel-line'
+    const barColor = over ? 'border-l-st-over' : dueSoon ? 'border-l-st-warn' : 'border-l-panel-line2'
     const label = item.component_type === 'Engine'
       ? item.equipment
       : `${item.equipment === 'Fuel Treatment' ? item.component_type : item.equipment}`
     return (
-      <div className={`rounded-lg border bg-panel-surface p-3.5 ${accent}`}>
+      <div className={`rounded-lg border border-l-4 border-panel-line ${barColor} bg-panel-surface p-3.5`}>
         <div className="flex items-start justify-between">
           <div>
             <div className="font-mono text-sm font-medium text-ink-hi">{label}</div>
@@ -69,9 +88,9 @@ function GensetGrid({ onSelectTasks }) {
             </span>
           )}
         </div>
-        <div className="mt-3 font-mono text-xl font-medium tnum text-ink-hi">
+        <div className="mt-3 font-sans text-2xl font-bold text-ink-hi">
           {fmtHours(item.current_hours)}
-          <span className="ml-1 text-xs font-normal text-ink-lo">hrs</span>
+          <span className="ml-1 text-xs font-normal font-sans text-ink-lo">hrs</span>
         </div>
         <div className="mt-2.5 flex items-center gap-3 text-[11px]">
           {over ? (
@@ -185,7 +204,9 @@ function OverduePanel({ expanded, onExpand, onCollapse, panelRef }) {
         <SectionLabel className="mb-0">
           {expanded ? 'All overdue maintenance tasks' : 'Overdue — by hours past due'}
         </SectionLabel>
-        <span className="font-mono text-xs text-st-over">{data.length} total</span>
+        <span className="rounded border border-st-over/30 bg-st-over/10 px-1.5 py-0.5 font-mono text-xs font-medium text-st-over">
+          {data.length} total
+        </span>
       </div>
       <table className="w-full text-sm">
         <thead>
@@ -200,13 +221,13 @@ function OverduePanel({ expanded, onExpand, onCollapse, panelRef }) {
         </thead>
         <tbody>
           {shown.map((t, i) => (
-            <tr key={t.id ?? i} className="border-t border-panel-line/60">
-              <td className="px-4 py-2 font-mono text-ink-hi">{t.equipment}</td>
+            <tr key={t.id ?? i} className="border-t border-panel-line/60 transition-colors hover:bg-panel-hover">
+              <td className="px-4 py-2 font-mono font-medium text-ink-hi">{t.equipment}</td>
               <td className="px-4 py-2 font-mono text-xs text-ink-lo">{t.component_type}</td>
               <td className="px-4 py-2 text-ink-mid">{t.task_name}</td>
               <td className="px-4 py-2 text-right font-mono tnum text-ink-mid">{currentDisplay(t)}</td>
               <td className="px-4 py-2 text-right font-mono tnum text-ink-lo">{dueAtDisplay(t)}</td>
-              <td className="px-4 py-2 text-right font-mono tnum font-medium text-st-over">{overdueDisplay(t)}</td>
+              <td className="px-4 py-2 text-right font-mono tnum font-bold text-st-over">{overdueDisplay(t)}</td>
             </tr>
           ))}
           {shown.length === 0 && (

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { MetricTile } from '../components/ui'
 
 /* ── helpers ──────────────────────────────────────────────────────────── */
 function fmtHours(n) {
@@ -21,15 +22,6 @@ function isOverdue(row) {
 }
 
 /* ── sub-components ──────────────────────────────────────────────────── */
-function KpiTile({ label, value, accent }) {
-  return (
-    <div className="bg-panel-surface border border-panel-line rounded-lg px-4 py-3">
-      <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-1">{label}</div>
-      <div className={`font-mono text-2xl font-bold ${accent}`}>{value}</div>
-    </div>
-  )
-}
-
 function OverdueCell({ row }) {
   if (row.workflow_status === 'In Progress') {
     return (
@@ -44,7 +36,7 @@ function OverdueCell({ row }) {
   }
   const overdue = Number(row.overdue_hours)
   if (overdue > 0) {
-    return <span className="font-mono font-bold text-red-700">{overdue.toLocaleString()} hrs</span>
+    return <span className="font-mono font-bold text-st-over">{overdue.toLocaleString()} hrs</span>
   }
   return <span className="font-mono text-ink-lo">—</span>
 }
@@ -72,7 +64,7 @@ function OverhaulTable({ title, rows }) {
                 key={`${row.line}|${row.equipment}|${row.component_type}`}
                 title={row.remarks || undefined}
                 className={`border-b border-panel-line border-l-2 transition-colors
-                  ${overdue ? 'border-l-red-700' : 'border-l-transparent'}
+                  ${overdue ? 'border-l-st-over' : 'border-l-transparent'}
                   ${i % 2 === 0 ? 'hover:bg-panel-hover' : 'bg-panel-raised hover:bg-panel-hover'}`}
               >
                 <td className="px-4 py-2.5">
@@ -149,10 +141,28 @@ export default function MajorMaintenance() {
       </div>
 
       {/* KPI strip */}
-      <div className="grid grid-cols-3 gap-3 mb-6 max-w-2xl">
-        <KpiTile label="Engines Overdue"        value={enginesOverdueCount}   accent={enginesOverdueCount > 0 ? 'text-red-700' : 'text-ink-mid'} />
-        <KpiTile label="Turbochargers Overdue"   value={turbosOverdueCount}    accent={turbosOverdueCount > 0 ? 'text-red-700' : 'text-ink-mid'} />
-        <KpiTile label="Under Maintenance"       value={underMaintenanceCount} accent={underMaintenanceCount > 0 ? 'text-amber-700' : 'text-ink-mid'} />
+      <div className="grid grid-cols-3 gap-3 mb-6 max-w-3xl">
+        <MetricTile
+          label="Engines Overdue"
+          value={enginesOverdueCount}
+          accent={enginesOverdueCount > 0 ? 'text-st-over' : 'text-ink-mid'}
+          barColor={enginesOverdueCount > 0 ? 'border-l-st-over' : 'border-l-panel-line2'}
+          dot={enginesOverdueCount > 0 ? 'bg-st-over' : 'bg-ink-lo'}
+        />
+        <MetricTile
+          label="Turbochargers Overdue"
+          value={turbosOverdueCount}
+          accent={turbosOverdueCount > 0 ? 'text-st-over' : 'text-ink-mid'}
+          barColor={turbosOverdueCount > 0 ? 'border-l-st-over' : 'border-l-panel-line2'}
+          dot={turbosOverdueCount > 0 ? 'bg-st-over' : 'bg-ink-lo'}
+        />
+        <MetricTile
+          label="Under Maintenance"
+          value={underMaintenanceCount}
+          accent={underMaintenanceCount > 0 ? 'text-st-warn' : 'text-ink-mid'}
+          barColor={underMaintenanceCount > 0 ? 'border-l-st-warn' : 'border-l-panel-line2'}
+          dot={underMaintenanceCount > 0 ? 'bg-st-warn' : 'bg-ink-lo'}
+        />
       </div>
 
       {/* tables */}

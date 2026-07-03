@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useKpis, useEquipmentStatus, useOverdueMaintenance, useEquipmentTasks } from '../lib/hooks'
-import { StatusDot, MetricTile, Spinner } from '../components/ui'
+import { MetricTile, Spinner } from '../components/ui'
 
 function fmtHours(h) {
   if (h === null || h === undefined) return '—'
@@ -26,10 +26,8 @@ function KpiStrip({ onOverdueClick }) {
   const { data, loading } = useKpis()
   if (loading || !data) return <div className="h-[76px]"><Spinner /></div>
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <MetricTile label="Equipment" value={data.totalEquipment} />
-      <MetricTile label="Running" value={data.running} accent="text-st-run" />
-      <MetricTile label="Standby" value={data.standby} accent="text-st-standby" />
       <MetricTile
         label="Overdue"
         value={data.overdue}
@@ -65,7 +63,11 @@ function GensetGrid({ onSelectTasks }) {
             <div className="font-mono text-sm font-medium text-ink-hi">{label}</div>
             <div className="text-[11px] text-ink-lo">{item.line}</div>
           </div>
-          <StatusDot status={item.current_status} />
+          {item.current_status === 'Under Maintenance' && (
+            <span className="rounded border border-st-warn/40 bg-st-warn/10 px-1.5 py-0.5 text-[11px] font-medium text-st-warn">
+              Under Maintenance
+            </span>
+          )}
         </div>
         <div className="mt-3 font-mono text-xl font-medium tnum text-ink-hi">
           {fmtHours(item.current_hours)}

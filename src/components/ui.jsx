@@ -1,23 +1,5 @@
 // Small shared presentational components for the control-room UI
 
-const STATUS_COLORS = {
-  Running: 'bg-st-run',
-  Standby: 'bg-st-standby',
-  Shutdown: 'bg-st-idle',
-  Tripped: 'bg-st-trip',
-  'Under Maintenance': 'bg-st-warn',
-}
-
-export function StatusDot({ status }) {
-  const c = STATUS_COLORS[status] || 'bg-st-idle'
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className={`h-2 w-2 rounded-full ${c}`} />
-      <span className="text-ink-mid text-xs">{status || '—'}</span>
-    </span>
-  )
-}
-
 const DUE_STYLE = {
   Overdue: 'text-st-over border-st-over/40 bg-st-over/10',
   'Due Soon': 'text-st-warn border-st-warn/40 bg-st-warn/10',

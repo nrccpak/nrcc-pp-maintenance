@@ -2,15 +2,15 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
 const DATA_STATUS_STYLES = {
-  'Confirmed':    'bg-emerald-900/30 text-emerald-400 border border-emerald-800/60',
-  'Field-verify': 'bg-amber-900/30  text-amber-400  border border-amber-800/60',
-  'GAP':          'bg-red-900/30    text-red-400    border border-red-800/60',
-  'Partial-GAP':  'bg-orange-900/30 text-orange-400 border border-orange-800/60',
+  'Confirmed':    'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  'Field-verify': 'bg-amber-50  text-amber-700  border border-amber-200',
+  'GAP':          'bg-red-50    text-red-700    border border-red-200',
+  'Partial-GAP':  'bg-orange-50 text-orange-700 border border-orange-200',
 }
 
 function StatusBadge({ status }) {
   return (
-    <span className={`px-2 py-0.5 rounded text-xs font-mono whitespace-nowrap ${DATA_STATUS_STYLES[status] || 'bg-gray-800 text-gray-400'}`}>
+    <span className={`px-2 py-0.5 rounded text-xs font-mono whitespace-nowrap ${DATA_STATUS_STYLES[status] || 'bg-gray-100 text-ink-mid'}`}>
       {status}
     </span>
   )
@@ -19,9 +19,9 @@ function StatusBadge({ status }) {
 function Field({ label, value }) {
   return (
     <div>
-      <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">{label}</div>
-      <div className="text-gray-200 text-sm leading-snug">
-        {value || <span className="text-gray-600 italic">—</span>}
+      <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-1">{label}</div>
+      <div className="text-ink-hi text-sm leading-snug">
+        {value || <span className="text-ink-lo italic">—</span>}
       </div>
     </div>
   )
@@ -149,8 +149,8 @@ export default function EquipmentRegistry() {
 
         {/* header */}
         <div className="mb-5">
-          <h1 className="text-2xl font-bold text-white tracking-tight">Equipment Registry</h1>
-          <p className="text-gray-400 text-sm mt-0.5">
+          <h1 className="text-2xl font-bold text-ink-hi tracking-tight">Equipment Registry</h1>
+          <p className="text-ink-mid text-sm mt-0.5">
             {total} component{total !== 1 ? 's' : ''} · component-level granularity
           </p>
         </div>
@@ -164,7 +164,7 @@ export default function EquipmentRegistry() {
               className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono border transition-all
                 ${filterStatus === s
                   ? DATA_STATUS_STYLES[s]
-                  : 'bg-[#161b22] border-[#30363d] text-gray-400 hover:border-gray-500'
+                  : 'bg-panel-surface border-panel-line text-ink-mid hover:border-panel-line2'
                 }`}
             >
               <span className="font-bold text-sm">{summary[s] ?? '…'}</span>
@@ -180,36 +180,36 @@ export default function EquipmentRegistry() {
             placeholder="Search equipment, component, description, location…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="bg-[#161b22] border border-[#30363d] text-gray-200 placeholder-gray-600
+            className="bg-panel-surface border border-panel-line text-ink-hi placeholder-ink-lo
                        rounded px-3 py-1.5 text-sm w-80 focus:outline-none focus:border-blue-500/70"
           />
 
           <select value={filterLine} onChange={e => setFilterLine(e.target.value)}
-            className="bg-[#161b22] border border-[#30363d] text-gray-300 rounded px-3 py-1.5 text-sm">
+            className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
             <option value="">All Lines</option>
             {LINE_OPTIONS.map(l => <option key={l}>{l}</option>)}
           </select>
 
           <select value={filterSystem} onChange={e => setFilterSystem(e.target.value)}
-            className="bg-[#161b22] border border-[#30363d] text-gray-300 rounded px-3 py-1.5 text-sm">
+            className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
             <option value="">All Systems</option>
             {systems.map(s => <option key={s}>{s}</option>)}
           </select>
 
           {hasFilters && (
             <button onClick={clearFilters}
-              className="text-xs text-gray-500 hover:text-gray-200 underline underline-offset-2 ml-1">
+              className="text-xs text-ink-lo hover:text-ink-hi underline underline-offset-2 ml-1">
               Clear filters
             </button>
           )}
         </div>
 
         {/* table */}
-        <div className="bg-[#161b22] border border-[#30363d] rounded-lg overflow-hidden flex-1 flex flex-col">
+        <div className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden flex-1 flex flex-col">
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-sm min-w-[780px]">
               <thead>
-                <tr className="border-b border-[#30363d] text-[10px] text-gray-500 uppercase tracking-widest">
+                <tr className="border-b border-panel-line text-[10px] text-ink-lo uppercase tracking-widest">
                   <th className="text-left px-4 py-3 font-medium">Line</th>
                   <th className="text-left px-4 py-3 font-medium">Equipment</th>
                   <th className="text-left px-4 py-3 font-medium">Component</th>
@@ -222,14 +222,14 @@ export default function EquipmentRegistry() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-16 text-gray-600">
-                      <div className="inline-block w-5 h-5 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mb-2" />
+                    <td colSpan={7} className="text-center py-16 text-ink-lo">
+                      <div className="inline-block w-5 h-5 border-2 border-panel-line2 border-t-blue-500 rounded-full animate-spin mb-2" />
                       <div className="text-xs">Loading equipment…</div>
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-16 text-gray-600 text-sm">
+                    <td colSpan={7} className="text-center py-16 text-ink-lo text-sm">
                       No equipment matches your filters.
                     </td>
                   </tr>
@@ -241,20 +241,20 @@ export default function EquipmentRegistry() {
                     <tr
                       key={`${row.line}|${row.equipment}|${row.component_type}`}
                       onClick={() => openDetail(row)}
-                      className={`border-b border-[#1c2128] cursor-pointer transition-colors
+                      className={`border-b border-panel-line cursor-pointer transition-colors
                         ${isSelected
-                          ? 'bg-blue-950/40 border-l-2 border-l-blue-500'
+                          ? 'bg-blue-50 border-l-2 border-l-blue-500'
                           : i % 2 === 0
-                            ? 'hover:bg-[#1c2128]'
-                            : 'bg-[#0d1117]/20 hover:bg-[#1c2128]'
+                            ? 'hover:bg-panel-hover'
+                            : 'bg-panel-raised hover:bg-panel-hover'
                         }`}
                     >
-                      <td className="px-4 py-2.5 text-gray-500 text-xs font-mono whitespace-nowrap">{row.line}</td>
-                      <td className="px-4 py-2.5 text-gray-100 font-medium whitespace-nowrap">{row.equipment}</td>
-                      <td className="px-4 py-2.5 text-gray-300 whitespace-nowrap">{row.component_type}</td>
-                      <td className="px-4 py-2.5 text-gray-400 text-xs whitespace-nowrap">{row.system}</td>
-                      <td className="px-4 py-2.5 text-gray-300 max-w-[220px] truncate" title={row.description}>{row.description}</td>
-                      <td className="px-4 py-2.5 text-gray-500 text-xs whitespace-nowrap">{row.location}</td>
+                      <td className="px-4 py-2.5 text-ink-lo text-xs font-mono whitespace-nowrap">{row.line}</td>
+                      <td className="px-4 py-2.5 text-ink-hi font-medium whitespace-nowrap">{row.equipment}</td>
+                      <td className="px-4 py-2.5 text-ink-mid whitespace-nowrap">{row.component_type}</td>
+                      <td className="px-4 py-2.5 text-ink-mid text-xs whitespace-nowrap">{row.system}</td>
+                      <td className="px-4 py-2.5 text-ink-mid max-w-[220px] truncate" title={row.description}>{row.description}</td>
+                      <td className="px-4 py-2.5 text-ink-lo text-xs whitespace-nowrap">{row.location}</td>
                       <td className="px-4 py-2.5"><StatusBadge status={row.data_status} /></td>
                     </tr>
                   )
@@ -265,13 +265,13 @@ export default function EquipmentRegistry() {
 
           {/* pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-[#30363d] text-xs text-gray-500">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-panel-line text-xs text-ink-lo">
               <span>
                 {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, total)} of {total} components
               </span>
               <div className="flex gap-1">
                 <button onClick={() => setPage(p => p - 1)} disabled={page === 0}
-                  className="px-3 py-1 rounded bg-[#21262d] text-gray-300 disabled:opacity-30 hover:bg-[#30363d]">
+                  className="px-3 py-1 rounded bg-panel-raised text-ink-mid disabled:opacity-30 hover:bg-panel-line">
                   ← Prev
                 </button>
                 {(() => {
@@ -283,13 +283,13 @@ export default function EquipmentRegistry() {
                   return range.map(p => (
                     <button key={p} onClick={() => setPage(p)}
                       className={`px-3 py-1 rounded text-xs
-                        ${p === page ? 'bg-blue-600 text-white' : 'bg-[#21262d] text-gray-300 hover:bg-[#30363d]'}`}>
+                        ${p === page ? 'bg-blue-600 text-white' : 'bg-panel-raised text-ink-mid hover:bg-panel-line'}`}>
                       {p + 1}
                     </button>
                   ))
                 })()}
                 <button onClick={() => setPage(p => p + 1)} disabled={page === totalPages - 1}
-                  className="px-3 py-1 rounded bg-[#21262d] text-gray-300 disabled:opacity-30 hover:bg-[#30363d]">
+                  className="px-3 py-1 rounded bg-panel-raised text-ink-mid disabled:opacity-30 hover:bg-panel-line">
                   Next →
                 </button>
               </div>
@@ -300,19 +300,19 @@ export default function EquipmentRegistry() {
 
       {/* ── DETAIL PANEL ────────────────────────────────────── */}
       {selected && (
-        <div className="fixed right-0 top-0 h-full w-[26rem] bg-[#161b22] border-l border-[#30363d]
+        <div className="fixed right-0 top-0 h-full w-[26rem] bg-panel-surface border-l border-panel-line
                         flex flex-col z-20 shadow-2xl">
 
           {/* panel header */}
           <div className="flex items-start justify-between px-5 pt-5 pb-4
-                          border-b border-[#30363d] sticky top-0 bg-[#161b22] z-10">
+                          border-b border-panel-line sticky top-0 bg-panel-surface z-10">
             <div className="flex-1 min-w-0 pr-3">
-              <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-1">{selected.line}</div>
-              <div className="text-white font-semibold text-lg leading-tight truncate">{selected.equipment}</div>
-              <div className="text-gray-400 text-sm mt-0.5">{selected.component_type}</div>
+              <div className="text-[10px] text-ink-lo font-mono uppercase tracking-widest mb-1">{selected.line}</div>
+              <div className="text-ink-hi font-semibold text-lg leading-tight truncate">{selected.equipment}</div>
+              <div className="text-ink-mid text-sm mt-0.5">{selected.component_type}</div>
             </div>
             <button onClick={() => setSelected(null)}
-              className="text-gray-600 hover:text-gray-200 text-2xl leading-none mt-0.5 flex-shrink-0">
+              className="text-ink-lo hover:text-ink-hi text-2xl leading-none mt-0.5 flex-shrink-0">
               ×
             </button>
           </div>
@@ -322,10 +322,10 @@ export default function EquipmentRegistry() {
 
             {/* data status */}
             <div>
-              <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Data Status</div>
+              <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-2">Data Status</div>
               {editing ? (
                 <select value={editStatus} onChange={e => setEditStatus(e.target.value)}
-                  className="bg-[#0e1116] border border-[#30363d] text-gray-200 rounded
+                  className="bg-panel-bg border border-panel-line text-ink-hi rounded
                              px-3 py-1.5 text-sm w-full focus:outline-none focus:border-blue-500/70">
                   {STATUS_OPTIONS.map(s => <option key={s}>{s}</option>)}
                 </select>
@@ -334,7 +334,7 @@ export default function EquipmentRegistry() {
               )}
             </div>
 
-            <div className="border-t border-[#21262d]" />
+            <div className="border-t border-panel-line" />
 
             <Field label="System"        value={selected.system} />
             <Field label="Description"   value={selected.description} />
@@ -343,32 +343,32 @@ export default function EquipmentRegistry() {
 
             {/* remarks */}
             <div>
-              <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Remarks</div>
+              <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-2">Remarks</div>
               {editing ? (
                 <textarea
                   value={editRemarks}
                   onChange={e => setEditRemarks(e.target.value)}
                   rows={3}
                   placeholder="Add a remark…"
-                  className="w-full bg-[#0e1116] border border-[#30363d] text-gray-200 rounded
+                  className="w-full bg-panel-bg border border-panel-line text-ink-hi rounded
                              px-3 py-2 text-sm resize-none focus:outline-none focus:border-blue-500/70"
                 />
               ) : (
-                <div className="text-gray-300 text-sm leading-relaxed">
-                  {selected.remarks || <span className="text-gray-600 italic">—</span>}
+                <div className="text-ink-mid text-sm leading-relaxed">
+                  {selected.remarks || <span className="text-ink-lo italic">—</span>}
                 </div>
               )}
             </div>
 
             {saveError && (
-              <div className="text-xs text-red-400 bg-red-900/20 border border-red-800/40 rounded px-3 py-2">
+              <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">
                 {saveError}
               </div>
             )}
           </div>
 
           {/* panel footer */}
-          <div className="px-5 py-4 border-t border-[#30363d] sticky bottom-0 bg-[#161b22]">
+          <div className="px-5 py-4 border-t border-panel-line sticky bottom-0 bg-panel-surface">
             {editing ? (
               <div className="flex gap-2">
                 <button onClick={handleSave} disabled={saving}
@@ -377,15 +377,15 @@ export default function EquipmentRegistry() {
                   {saving ? 'Saving…' : 'Save Changes'}
                 </button>
                 <button onClick={() => { setEditing(false); setSaveError('') }}
-                  className="px-4 text-sm text-gray-400 hover:text-white
-                             border border-[#30363d] hover:border-gray-500 rounded transition-colors">
+                  className="px-4 text-sm text-ink-mid hover:text-ink-hi
+                             border border-panel-line hover:border-panel-line2 rounded transition-colors">
                   Cancel
                 </button>
               </div>
             ) : (
               <button onClick={() => setEditing(true)}
-                className="w-full border border-[#30363d] hover:border-blue-500/60
-                           text-gray-400 hover:text-white text-sm py-2 rounded transition-colors">
+                className="w-full border border-panel-line hover:border-blue-500/60
+                           text-ink-mid hover:text-ink-hi text-sm py-2 rounded transition-colors">
                 Edit Status / Remarks
               </button>
             )}

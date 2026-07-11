@@ -82,7 +82,16 @@ export default function EquipmentRegistry() {
       .order('line').order('equipment').order('component_type')
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
 
-    if (search)       q = q.or(`description.ilike.%${search}%,equipment.ilike.%${search}%,component_type.ilike.%${search}%,location.ilike.%${search}%,specification.ilike.%${search}%`)
+    if (search) {
+      // PostgREST reserved characters (comma, parens, dot) inside an or=()
+      // value break the filter grammar unless the value is double-quoted;
+      // embedded quotes/backslashes must be backslash-escaped.
+      const pattern = `"%${search.replace(/[\\"]/g, m => `\\${m}`)}%"`
+      q = q.or(
+        ['description', 'equipment', 'component_type', 'location', 'specification']
+          .map(col => `${col}.ilike.${pattern}`).join(',')
+      )
+    }
     if (filterLine)   q = q.eq('line',        filterLine)
     if (filterSystem) q = q.eq('system',      filterSystem)
     if (filterStatus) q = q.eq('data_status', filterStatus)

@@ -1,77 +1,12 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { ErrorBanner, PageHeader, PageLoader, FilterBar, SearchInput, FilterSelect } from '../components/ui'
+import { PageHeader, PageLoader } from '../components/ui'
 import { fmtHoursUnit as fmtHours, todayStr } from '../lib/format'
-
-/* ── helpers ──────────────────────────────────────────────────────────── */
-function urgencyDisplay(task) {
-  if (task.hours_remaining !== null) {
-    const hrs = Math.abs(Math.round(task.hours_remaining))
-    return task.hours_remaining < 0
-      ? `${hrs.toLocaleString()} hrs overdue`
-      : `${hrs.toLocaleString()} hrs remaining`
-  }
-  if (task.days_remaining !== null) {
-    const days = Math.abs(task.days_remaining)
-    return task.days_remaining < 0
-      ? `${days} days overdue`
-      : `${days} days remaining`
-  }
-  return 'No baseline'
-}
-
-function normalizeState(s) {
-  return s?.startsWith('Unknown') ? 'Unknown' : (s || 'Unknown')
-}
-
-const STATE_ORDER = ['Overdue', 'Due Soon', 'Scheduled', 'Unknown']
-const HIST_PAGE_SIZE = 25
-
-// Nested PM interval chain (Engine, Hours-based) — lowest to highest tier.
-// Completing a higher tier sweeps in any lower-tier task (any component on
-// the same equipment) that is currently due, per the nested-closure rule.
-const SERVICE_TIER_CHAIN = ['500hr Schedule Service', '1K Service', '2K Service', '6K Service', '12K Major Overhaul']
-
-const COLORS = {
-  'Overdue':  {
-    pill:  'bg-red-50 text-red-700 border border-red-200',
-    hdr:   'text-red-700',
-    dot:   'bg-red-500',
-    sel:   'border-l-red-700',
-    urg:   'text-red-700',
-  },
-  'Due Soon': {
-    pill:  'bg-amber-50 text-amber-700 border border-amber-200',
-    hdr:   'text-amber-700',
-    dot:   'bg-amber-500',
-    sel:   'border-l-amber-600',
-    urg:   'text-amber-700',
-  },
-  'Scheduled':{
-    pill:  'bg-blue-50 text-blue-700 border border-blue-200',
-    hdr:   'text-blue-700',
-    dot:   'bg-blue-500',
-    sel:   'border-l-blue-700',
-    urg:   'text-blue-700',
-  },
-  'Unknown':  {
-    pill:  'bg-gray-100 text-ink-lo border border-panel-line2',
-    hdr:   'text-ink-lo',
-    dot:   'bg-gray-400',
-    sel:   'border-l-gray-600',
-    urg:   'text-ink-lo',
-  },
-}
-
-/* ── sub-components ───────────────────────────────────────────────────── */
-function InfoTile({ label, value, mono = true }) {
-  return (
-    <div className="bg-panel-bg rounded-lg p-3 border border-panel-line">
-      <div className="text-[9px] text-ink-lo uppercase tracking-widest mb-1">{label}</div>
-      <div className={`text-ink-hi text-sm ${mono ? 'font-mono' : ''}`}>{value ?? '—'}</div>
-    </div>
-  )
-}
+import { HIST_PAGE_SIZE, SERVICE_TIER_CHAIN, normalizeState } from './maintenance/constants'
+import TaskBoardTab from './maintenance/TaskBoardTab'
+import HistoryTab from './maintenance/HistoryTab'
+import TaskDetailPanel from './maintenance/TaskDetailPanel'
+import LogCompletionModal from './maintenance/LogCompletionModal'
 
 /* ── main component ───────────────────────────────────────────────────── */
 export default function Maintenance() {
@@ -179,16 +114,6 @@ export default function Maintenance() {
     }
     return true
   })
-
-  const grouped = {}
-  filtered.forEach(t => {
-    const key = normalizeState(t.due_state)
-    ;(grouped[key] = grouped[key] || []).push(t)
-  })
-  // sort each group: most urgent first (most negative hours_remaining)
-  Object.values(grouped).forEach(arr =>
-    arr.sort((a, b) => (a.hours_remaining ?? 0) - (b.hours_remaining ?? 0))
-  )
 
   const counts = {}
   tasks.forEach(t => {
@@ -411,521 +336,63 @@ export default function Maintenance() {
         </div>
 
         {activeTab === 'tasks' && (
-        <>
-        {/* summary pills */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {STATE_ORDER.map(key => counts[key] ? (
-            <div key={key} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono border ${COLORS[key].pill}`}>
-              <span className="font-bold text-sm">{counts[key]}</span>
-              {key}
-            </div>
-          ) : null)}
-        </div>
-
-        <FilterBar className="mb-5">
-          <SearchInput
-            placeholder="Search equipment, component, task…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-72"
+          <TaskBoardTab
+            filtered={filtered}
+            counts={counts}
+            collapsed={collapsed}
+            toggleGroup={toggleGroup}
+            search={search} setSearch={setSearch}
+            filterLine={filterLine} setFilterLine={setFilterLine}
+            filterBasis={filterBasis} setFilterBasis={setFilterBasis}
+            selected={selected} setSelected={setSelected}
+            loadError={loadError} loadTasks={loadTasks} loading={loading}
           />
-          <FilterSelect value={filterLine} onChange={e => setFilterLine(e.target.value)}>
-            <option value="">All Lines</option>
-            {['Line-1', 'Line-2', 'Common'].map(l => <option key={l}>{l}</option>)}
-          </FilterSelect>
-          <FilterSelect value={filterBasis} onChange={e => setFilterBasis(e.target.value)}>
-            <option value="">All Intervals</option>
-            <option value="Hours">Hours-based</option>
-            <option value="Calendar">Calendar-based</option>
-          </FilterSelect>
-          {(search || filterLine || filterBasis) && (
-            <button
-              onClick={() => { setSearch(''); setFilterLine(''); setFilterBasis('') }}
-              className="text-xs text-ink-lo hover:text-ink-hi underline underline-offset-2">
-              Clear
-            </button>
-          )}
-        </FilterBar>
-
-        {/* grouped sections */}
-        <div className="space-y-3">
-          {STATE_ORDER.map(key => {
-            const items = grouped[key]
-            if (!items?.length) return null
-            const c = COLORS[key]
-            const open = !collapsed[key]
-            return (
-              <div key={key} className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden shadow-sm">
-
-                {/* section header */}
-                <button
-                  onClick={() => toggleGroup(key)}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-panel-hover transition-colors">
-                  <div className="flex items-center gap-2.5">
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${c.dot}`} />
-                    <span className={`text-sm font-semibold ${c.hdr}`}>{key}</span>
-                    <span className="text-xs text-ink-lo font-mono">
-                      {items.length} task{items.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  <span className="text-ink-lo text-xs">{open ? '▾' : '▸'}</span>
-                </button>
-
-                {/* section rows */}
-                {open && (
-                  <div className="border-t border-panel-line">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-[10px] text-ink-lo uppercase tracking-widest border-b border-panel-line">
-                          <th className="text-left px-4 py-2 font-medium">Equipment</th>
-                          <th className="text-left px-4 py-2 font-medium">Task</th>
-                          <th className="text-left px-4 py-2 font-medium w-24">Interval</th>
-                          <th className="text-left px-4 py-2 font-medium w-40">Urgency</th>
-                          <th className="text-left px-4 py-2 font-medium w-32">Next Due</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {items.map((t, i) => {
-                          const isSel = selected?.id === t.id
-                          return (
-                            <tr
-                              key={t.id}
-                              onClick={() => setSelected(isSel ? null : t)}
-                              className={`border-b border-panel-line cursor-pointer transition-colors border-l-2
-                                ${isSel
-                                  ? `bg-blue-50 ${c.sel}`
-                                  : `border-l-transparent ${i % 2 === 0 ? 'hover:bg-panel-hover' : 'bg-panel-raised hover:bg-panel-hover'}`
-                                }`}
-                            >
-                              <td className="px-4 py-2.5">
-                                <div className="text-ink-hi font-medium text-sm leading-tight">{t.equipment}</div>
-                                <div className="text-ink-lo text-[10px] font-mono mt-0.5">{t.line} · {t.component_type}</div>
-                              </td>
-                              <td className="px-4 py-2.5">
-                                <div className="text-ink-mid text-sm truncate max-w-[220px]" title={t.task_name}>{t.task_name}</div>
-                              </td>
-                              <td className="px-4 py-2.5 text-ink-lo text-xs">{t.interval_basis}</td>
-                              <td className="px-4 py-2.5">
-                                <span className={`text-xs font-mono ${c.urg}`}>{urgencyDisplay(t)}</span>
-                              </td>
-                              <td className="px-4 py-2.5 text-ink-mid text-xs font-mono whitespace-nowrap">
-                                {t.next_due_hours
-                                  ? `${Number(t.next_due_hours).toLocaleString()} hrs`
-                                  : t.next_due_date || '—'}
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-
-          {loadError && !loading && (
-            <ErrorBanner message={loadError} onRetry={loadTasks} />
-          )}
-
-          {!loadError && filtered.length === 0 && !loading && (
-            <div className="text-center py-16 text-ink-lo text-sm">
-              No tasks match your filters.
-            </div>
-          )}
-        </div>
-        </>
         )}
 
         {activeTab === 'history' && (
-          <div>
-            {/* history filter bar */}
-            <FilterBar className="mb-5">
-              <SearchInput
-                placeholder="Search equipment, component, description…"
-                value={histSearch}
-                onChange={e => setHistSearch(e.target.value)}
-                className="w-72"
-              />
-              <FilterSelect value={histFilterLine} onChange={e => setHistFilterLine(e.target.value)}>
-                <option value="">All Lines</option>
-                {['Line-1', 'Line-2', 'Common'].map(l => <option key={l}>{l}</option>)}
-              </FilterSelect>
-              <FilterSelect value={histFilterCategory} onChange={e => setHistFilterCategory(e.target.value)}>
-                <option value="">All Categories</option>
-                {['Routine Maintenance', 'Defect', 'PMS', 'CBM', 'Routine analysis', 'Weekly', 'Overhaul', 'Other'].map(c => <option key={c}>{c}</option>)}
-              </FilterSelect>
-              {(histSearch || histFilterLine || histFilterCategory) && (
-                <button
-                  onClick={() => { setHistSearch(''); setHistFilterLine(''); setHistFilterCategory('') }}
-                  className="text-xs text-ink-lo hover:text-ink-hi underline underline-offset-2">
-                  Clear
-                </button>
-              )}
-            </FilterBar>
-
-            {/* history table */}
-            {historyListLoading ? (
-              <PageLoader label="Loading history" />
-            ) : histLoadError ? (
-              <ErrorBanner message={histLoadError} onRetry={loadAllHistory} />
-            ) : histFiltered.length === 0 ? (
-              <div className="text-center py-16 text-ink-lo text-sm">
-                No history records match your filters.
-              </div>
-            ) : (
-              <>
-                <div className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden shadow-sm">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-[10px] text-ink-lo uppercase tracking-widest border-b border-panel-line">
-                        <th className="text-left px-4 py-2 font-medium w-28">Date</th>
-                        <th className="text-left px-4 py-2 font-medium">Equipment</th>
-                        <th className="text-left px-4 py-2 font-medium w-24">Run Hrs</th>
-                        <th className="text-left px-4 py-2 font-medium w-36">Category</th>
-                        <th className="text-left px-4 py-2 font-medium">Description</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {histPageItems.map((h, i) => {
-                        const isOpen = expandedHistId === h.id
-                        return (
-                          <tr
-                            key={h.id}
-                            onClick={() => setExpandedHistId(isOpen ? null : h.id)}
-                            className={`border-b border-panel-line cursor-pointer transition-colors
-                              ${isOpen ? 'bg-blue-50' : i % 2 === 0 ? 'hover:bg-panel-hover' : 'bg-panel-raised hover:bg-panel-hover'}`}
-                          >
-                            <td className="px-4 py-2.5 text-ink-lo text-xs font-mono whitespace-nowrap">
-                              {h.work_date || h.work_date_text || '—'}
-                            </td>
-                            <td className="px-4 py-2.5">
-                              <div className="text-ink-hi font-medium text-sm leading-tight">{h.equipment || '—'}</div>
-                              <div className="text-ink-lo text-[10px] font-mono mt-0.5">{h.line} · {h.component_type}</div>
-                            </td>
-                            <td className="px-4 py-2.5 text-ink-mid text-xs font-mono">
-                              {h.run_hours ? Number(h.run_hours).toLocaleString() : '—'}
-                            </td>
-                            <td className="px-4 py-2.5">
-                              {h.work_category && (
-                                <span className="text-[9px] bg-panel-raised text-ink-lo px-1.5 py-0.5 rounded font-mono">
-                                  {h.work_category}
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 py-2.5 text-ink-mid text-xs leading-relaxed">
-                              <div className={isOpen ? '' : 'truncate max-w-[420px]'} title={isOpen ? undefined : h.work_description}>
-                                {h.work_description}
-                              </div>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* pagination */}
-                <div className="flex items-center justify-between mt-4 text-xs text-ink-lo">
-                  <div>
-                    Showing {(histPageClamped - 1) * HIST_PAGE_SIZE + 1}
-                    –{Math.min(histPageClamped * HIST_PAGE_SIZE, histFiltered.length)} of {histFiltered.length}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setHistPage(p => Math.max(1, p - 1))}
-                      disabled={histPageClamped <= 1}
-                      className="px-2.5 py-1 border border-panel-line rounded hover:border-panel-line2 hover:text-ink-hi disabled:opacity-30 disabled:cursor-not-allowed">
-                      ← Prev
-                    </button>
-                    <span className="font-mono">Page {histPageClamped} of {histTotalPages}</span>
-                    <button
-                      onClick={() => setHistPage(p => Math.min(histTotalPages, p + 1))}
-                      disabled={histPageClamped >= histTotalPages}
-                      className="px-2.5 py-1 border border-panel-line rounded hover:border-panel-line2 hover:text-ink-hi disabled:opacity-30 disabled:cursor-not-allowed">
-                      Next →
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          <HistoryTab
+            histFiltered={histFiltered}
+            histPageItems={histPageItems}
+            histTotalPages={histTotalPages}
+            histPageClamped={histPageClamped}
+            setHistPage={setHistPage}
+            histSearch={histSearch} setHistSearch={setHistSearch}
+            histFilterLine={histFilterLine} setHistFilterLine={setHistFilterLine}
+            histFilterCategory={histFilterCategory} setHistFilterCategory={setHistFilterCategory}
+            expandedHistId={expandedHistId} setExpandedHistId={setExpandedHistId}
+            historyListLoading={historyListLoading} histLoadError={histLoadError}
+            loadAllHistory={loadAllHistory}
+          />
         )}
       </div>
 
       {/* ── DETAIL PANEL ─────────────────────────────────────────────── */}
       {selected && activeTab === 'tasks' && (
-        <div className="fixed right-0 top-0 h-full w-[26rem] bg-panel-surface border-l border-panel-line flex flex-col z-20 shadow-2xl">
-
-          {/* header */}
-          <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-panel-line sticky top-0 bg-panel-surface">
-            <div className="flex-1 min-w-0 pr-3">
-              <div className="text-[10px] text-ink-lo font-mono uppercase tracking-widest mb-1">
-                {selected.line} · {selected.component_type}
-              </div>
-              <div className="text-ink-hi font-semibold text-lg leading-tight">{selected.equipment}</div>
-              <div className="text-ink-mid text-sm mt-1 leading-snug">{selected.task_name}</div>
-            </div>
-            <button onClick={() => setSelected(null)}
-              className="text-ink-lo hover:text-ink-hi text-2xl leading-none mt-0.5 flex-shrink-0">
-              ×
-            </button>
-          </div>
-
-          {/* body */}
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-
-            {/* urgency banner */}
-            <div className={`rounded-lg px-4 py-3 border ${
-              normalizeState(selected.due_state) === 'Overdue'  ? 'bg-red-50  border-red-200' :
-              normalizeState(selected.due_state) === 'Due Soon' ? 'bg-amber-50 border-amber-200' :
-              normalizeState(selected.due_state) === 'Scheduled'? 'bg-blue-50  border-blue-200' :
-              'bg-panel-raised border-panel-line'
-            }`}>
-              <div className="text-[9px] text-ink-lo uppercase tracking-widest mb-1">Urgency</div>
-              <div className={`font-mono font-bold text-base ${COLORS[normalizeState(selected.due_state)].urg}`}>
-                {urgencyDisplay(selected)}
-              </div>
-            </div>
-
-            {/* stats grid */}
-            <div className="grid grid-cols-2 gap-2">
-              <InfoTile label="Current Hours"
-                value={selected.current_hours ? fmtHours(selected.current_hours) : '—'} />
-              <InfoTile label="Next Due"
-                value={selected.next_due_hours
-                  ? fmtHours(selected.next_due_hours)
-                  : selected.next_due_date || '—'} />
-              <InfoTile label="Interval"
-                value={taskDetail
-                  ? (taskDetail.interval_hours ? fmtHours(taskDetail.interval_hours) : `${taskDetail.interval_days} days`)
-                  : '…'} />
-              <InfoTile label="Basis"    value={selected.interval_basis} />
-            </div>
-
-            {/* last done */}
-            {taskDetail && (taskDetail.last_done_hours || taskDetail.last_done_date) && (
-              <div>
-                <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-1">Last Done</div>
-                <div className="text-ink-mid text-sm font-mono">
-                  {taskDetail.last_done_hours ? fmtHours(taskDetail.last_done_hours) : ''}
-                  {taskDetail.last_done_date  ? ` · ${taskDetail.last_done_date}` : ''}
-                </div>
-              </div>
-            )}
-
-            {taskDetail?.remarks && (
-              <div>
-                <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-1">Remarks</div>
-                <div className="text-ink-mid text-sm">{taskDetail.remarks}</div>
-              </div>
-            )}
-
-            <div className="border-t border-panel-line my-1" />
-
-            {/* maintenance history */}
-            <div>
-              <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-3">
-                Maintenance History{history.length > 0 ? ` (${history.length})` : ''}
-              </div>
-
-              {historyLoading ? (
-                <div className="text-xs text-ink-lo text-center py-6">Loading history…</div>
-              ) : history.length === 0 ? (
-                <div className="text-xs text-ink-lo italic text-center py-6">
-                  No history records for this component.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {history.map(h => (
-                    <div key={h.id} className="bg-panel-bg rounded-lg p-3 border border-panel-line">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] text-ink-lo font-mono">
-                          {h.work_date}
-                          {h.run_hours ? ` · ${Number(h.run_hours).toLocaleString()} hrs` : ''}
-                        </span>
-                        {h.work_category && (
-                          <span className="text-[9px] bg-panel-raised text-ink-lo px-1.5 py-0.5 rounded font-mono">
-                            {h.work_category}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-ink-mid text-xs leading-relaxed">{h.work_description}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* footer */}
-          <div className="px-5 py-4 border-t border-panel-line sticky bottom-0 bg-panel-surface">
-            <button
-              onClick={() => { setModal(true); setLogError('') }}
-              className="w-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200
-                         hover:border-emerald-400 text-emerald-700 hover:text-emerald-800
-                         text-sm font-medium py-2.5 rounded transition-colors">
-              ✓ Log Completion
-            </button>
-          </div>
-        </div>
+        <TaskDetailPanel
+          selected={selected}
+          taskDetail={taskDetail}
+          history={history}
+          historyLoading={historyLoading}
+          onClose={() => setSelected(null)}
+          onLogCompletion={() => { setModal(true); setLogError('') }}
+        />
       )}
 
       {/* ── LOG COMPLETION MODAL ─────────────────────────────────────── */}
       {modal && selected && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
-          onClick={e => { if (e.target === e.currentTarget) { setModal(false); setLogError('') } }}
-        >
-          <div className="bg-panel-surface border border-panel-line rounded-xl w-full max-w-md mx-4 shadow-2xl">
-
-            <div className="px-6 pt-6 pb-4 border-b border-panel-line">
-              <div className="text-ink-hi font-semibold text-base">Log Completion</div>
-              <div className="text-ink-mid text-sm mt-0.5 leading-snug">
-                {selected.equipment} · {selected.task_name}
-              </div>
-            </div>
-
-            <div className="px-6 py-5 space-y-4">
-
-              {/* hours or date input */}
-              {selected.interval_basis === 'Hours' ? (
-                <div>
-                  <label className="block text-[10px] text-ink-lo uppercase tracking-widest mb-2">
-                    Run Hours at Completion
-                  </label>
-                  <input
-                    type="number"
-                    value={logHours}
-                    onChange={e => setLogHours(e.target.value)}
-                    placeholder={selected.current_hours
-                      ? `Current reading: ${Number(selected.current_hours).toLocaleString()}`
-                      : 'Enter run hours…'}
-                    className="w-full bg-panel-bg border border-panel-line text-ink-hi rounded
-                               px-3 py-2 text-sm font-mono focus:outline-none focus:border-blue-500/70"
-                  />
-                  {nextDue && (
-                    <div className="mt-2 text-xs text-ink-lo">
-                      Next due will be set to{' '}
-                      <span className="text-blue-700 font-mono">{nextDue.next_due_hours_fmt}</span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-[10px] text-ink-lo uppercase tracking-widest mb-2">
-                    Completion Date
-                  </label>
-                  <input
-                    type="date"
-                    value={logDate}
-                    onChange={e => setLogDate(e.target.value)}
-                    className="w-full bg-panel-bg border border-panel-line text-ink-hi rounded
-                               px-3 py-2 text-sm focus:outline-none focus:border-blue-500/70"
-                  />
-                  {nextDue && (
-                    <div className="mt-2 text-xs text-ink-lo">
-                      Next due will be set to{' '}
-                      <span className="text-blue-700 font-mono">{nextDue.next_due_date_fmt}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* date field for hours-based tasks */}
-              {selected.interval_basis === 'Hours' && (
-                <div>
-                  <label className="block text-[10px] text-ink-lo uppercase tracking-widest mb-2">
-                    Completion Date
-                  </label>
-                  <input
-                    type="date"
-                    value={logDate}
-                    onChange={e => setLogDate(e.target.value)}
-                    className="w-full bg-panel-bg border border-panel-line text-ink-hi rounded
-                               px-3 py-2 text-sm focus:outline-none focus:border-blue-500/70"
-                  />
-                </div>
-              )}
-
-              {/* work description */}
-              <div>
-                <label className="block text-[10px] text-ink-lo uppercase tracking-widest mb-2">
-                  Work Description{' '}
-                  <span className="text-ink-lo normal-case">(optional)</span>
-                </label>
-                <textarea
-                  value={logDesc}
-                  onChange={e => setLogDesc(e.target.value)}
-                  rows={3}
-                  placeholder="Describe the work performed…"
-                  className="w-full bg-panel-bg border border-panel-line text-ink-hi rounded
-                             px-3 py-2 text-sm resize-none focus:outline-none focus:border-blue-500/70"
-                />
-              </div>
-
-              {/* nested PM interval sweep-in */}
-              {sweepLoading && (
-                <div className="text-xs text-ink-lo">Checking for lower-tier tasks due on this equipment…</div>
-              )}
-              {!sweepLoading && sweepCandidates.length > 0 && (
-                <div>
-                  <label className="block text-[10px] text-ink-lo uppercase tracking-widest mb-2">
-                    Will also be closed as part of this service
-                  </label>
-                  <div className="space-y-1.5">
-                    {sweepCandidates.map(c => (
-                      <label
-                        key={c.id}
-                        className="flex items-start gap-2.5 bg-panel-bg border border-panel-line rounded px-3 py-2
-                                   cursor-pointer hover:border-panel-line transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={!!sweepChecked[c.id]}
-                          onChange={e => setSweepChecked(prev => ({ ...prev, [c.id]: e.target.checked }))}
-                          className="mt-0.5 accent-emerald-600"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-ink-hi text-xs font-medium leading-tight">
-                            {c.component_type} · {c.task_name}
-                          </div>
-                          <div className="text-ink-lo text-[10px] font-mono mt-0.5">{urgencyDisplay(c)}</div>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                  <div className="text-[10px] text-ink-lo mt-2 leading-relaxed">
-                    Each confirmed task is marked complete on {logDate || 'this date'} with a history note
-                    referencing this {selected.task_name}.
-                  </div>
-                </div>
-              )}
-
-              {logError && (
-                <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2.5">
-                  {logError}
-                </div>
-              )}
-            </div>
-
-            <div className="px-6 py-4 border-t border-panel-line flex gap-2">
-              <button
-                onClick={handleLogSave}
-                disabled={logSaving || !canSave()}
-                className="flex-1 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40
-                           disabled:cursor-not-allowed text-white text-sm font-medium py-2 rounded transition-colors">
-                {logSaving ? 'Saving…' : 'Confirm Completion'}
-              </button>
-              <button
-                onClick={() => { setModal(false); setLogError('') }}
-                className="px-4 text-sm text-ink-mid hover:text-ink-hi
-                           border border-panel-line hover:border-panel-line2 rounded transition-colors">
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+        <LogCompletionModal
+          selected={selected}
+          logHours={logHours} setLogHours={setLogHours}
+          logDate={logDate} setLogDate={setLogDate}
+          logDesc={logDesc} setLogDesc={setLogDesc}
+          nextDue={nextDue}
+          sweepLoading={sweepLoading}
+          sweepCandidates={sweepCandidates}
+          sweepChecked={sweepChecked} setSweepChecked={setSweepChecked}
+          logError={logError} logSaving={logSaving} canSave={canSave}
+          onSave={handleLogSave}
+          onClose={() => { setModal(false); setLogError('') }}
+        />
       )}
     </div>
   )

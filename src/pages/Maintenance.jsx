@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { ErrorBanner, PageHeader, PageLoader } from '../components/ui'
+import { fmtHoursUnit as fmtHours, todayStr } from '../lib/format'
 
 /* ── helpers ──────────────────────────────────────────────────────────── */
 function urgencyDisplay(task) {
@@ -77,6 +79,7 @@ export default function Maintenance() {
   /* ── state ──────────────────────────────────────────────────────── */
   const [tasks,    setTasks]    = useState([])
   const [loading,  setLoading]  = useState(true)
+  const [loadError,setLoadError]= useState('')
   const [collapsed,setCollapsed]= useState({})   // { Overdue: false, … }
 
   const [search,      setSearch]      = useState('')
@@ -106,29 +109,25 @@ export default function Maintenance() {
   const [activeTab,          setActiveTab]          = useState('tasks')   // 'tasks' | 'history'
   const [allHistory,         setAllHistory]         = useState([])
   const [historyListLoading, setHistoryListLoading] = useState(false)
-  const [historyListLoaded,  setHistoryListLoaded]  = useState(false)
   const [histSearch,         setHistSearch]         = useState('')
   const [histFilterLine,     setHistFilterLine]     = useState('')
   const [histFilterCategory, setHistFilterCategory] = useState('')
   const [histPage,           setHistPage]           = useState(1)
   const [expandedHistId,     setExpandedHistId]     = useState(null)
-
-  /* ── helpers ────────────────────────────────────────────────────── */
-  function todayStr() { return new Date().toISOString().slice(0, 10) }
-
-  function fmtHours(n) {
-    if (n == null) return '—'
-    return Number(n).toLocaleString() + ' hrs'
-  }
+  const [histLoadError,      setHistLoadError]      = useState('')
 
   /* ── data loading ───────────────────────────────────────────────── */
   async function loadTasks() {
     setLoading(true)
-    const { data } = await supabase
+    setLoadError('')
+    const { data, error } = await supabase
       .from('v_maintenance_due')
       .select('*')
-    setTasks(data || [])
+    if (error) { setLoadError(error.message); setLoading(false); return [] }
+    const rows = data || []
+    setTasks(rows)
     setLoading(false)
+    return rows
   }
 
   useEffect(() => { loadTasks() }, [])
@@ -147,23 +146,23 @@ export default function Maintenance() {
       .eq('equipment',      selected.equipment)
       .eq('component_type', selected.component_type)
       .order('work_date', { ascending: false })
-      .limit(8)
       .then(({ data }) => { setHistory(data || []); setHistoryLoading(false) })
   }, [selected])
 
   async function loadAllHistory() {
     setHistoryListLoading(true)
-    const { data } = await supabase
+    setHistLoadError('')
+    const { data, error } = await supabase
       .from('maintenance_history')
       .select('*')
       .order('work_date', { ascending: false })
+    if (error) { setHistLoadError(error.message); setHistoryListLoading(false); return }
     setAllHistory(data || [])
     setHistoryListLoading(false)
-    setHistoryListLoaded(true)
   }
 
   useEffect(() => {
-    if (activeTab === 'history' && !historyListLoaded) loadAllHistory()
+    if (activeTab === 'history') loadAllHistory()
   }, [activeTab])
 
   useEffect(() => { setHistPage(1) }, [histSearch, histFilterLine, histFilterCategory])
@@ -288,11 +287,13 @@ export default function Maintenance() {
     setLogSaving(true)
     setLogError('')
 
+    // next_due_hours/next_due_date are DB-generated columns (last_done + interval) —
+    // only the "last done" baseline is writable; the DB recomputes the rest.
     const updateData = {
       updated_at: new Date().toISOString(),
       ...(taskDetail.interval_basis === 'Hours'
-        ? { last_done_hours: parseFloat(logHours), next_due_hours: nextDue?.next_due_hours }
-        : { last_done_date: logDate,               next_due_date:  nextDue?.next_due_date  }),
+        ? { last_done_hours: parseFloat(logHours) }
+        : { last_done_date: logDate }),
     }
 
     const { error: updErr } = await supabase
@@ -308,7 +309,7 @@ export default function Maintenance() {
       return
     }
 
-    await supabase.from('maintenance_history').insert({
+    const { error: histErr } = await supabase.from('maintenance_history').insert({
       line:             selected.line,
       equipment:        selected.equipment,
       component_type:   selected.component_type,
@@ -319,6 +320,13 @@ export default function Maintenance() {
       linked_task_id:   selected.id,
       source:           'Manual entry',
     })
+
+    if (histErr) {
+      setLogError(`Completion saved, but the history record failed to save: ${histErr.message}`)
+      setLogSaving(false)
+      await loadTasks()
+      return
+    }
 
     // nested PM interval rule: close confirmed lower-tier siblings alongside
     // this higher-tier service (same equipment, same completion date)
@@ -348,15 +356,15 @@ export default function Maintenance() {
     }
 
     // refresh tasks + history
-    await loadTasks()
+    const freshTasks = await loadTasks()
     const { data: hist } = await supabase
       .from('maintenance_history').select('*')
       .eq('line', selected.line).eq('equipment', selected.equipment).eq('component_type', selected.component_type)
-      .order('work_date', { ascending: false }).limit(8)
+      .order('work_date', { ascending: false })
     setHistory(hist || [])
 
-    // re-select updated task from fresh list
-    setSelected(prev => tasks.find(t => t.id === prev.id) || prev)
+    // re-select updated task from the freshly loaded list
+    setSelected(prev => freshTasks.find(t => t.id === prev.id) || prev)
 
     // reset modal
     setModal(false)
@@ -369,14 +377,7 @@ export default function Maintenance() {
   }
 
   /* ── render ──────────────────────────────────────────────────────── */
-  if (loading) return (
-    <div className="flex items-center justify-center h-64 text-ink-lo">
-      <div className="text-center">
-        <div className="w-6 h-6 border-2 border-panel-line2 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
-        <div className="text-sm">Loading maintenance tasks…</div>
-      </div>
-    </div>
-  )
+  if (loading) return <PageLoader label="Loading maintenance tasks" />
 
   return (
     <div className="flex h-full">
@@ -384,14 +385,12 @@ export default function Maintenance() {
       {/* ── MAIN COLUMN ──────────────────────────────────────────────── */}
       <div className={`flex flex-col flex-1 min-w-0 transition-all duration-200 ${selected && activeTab === 'tasks' ? 'pr-[26rem]' : ''}`}>
 
-        <div className="mb-5">
-          <h1 className="text-2xl font-bold text-ink-hi tracking-tight">Maintenance Board</h1>
-          <p className="text-ink-mid text-sm mt-0.5">
-            {activeTab === 'tasks'
-              ? `${tasks.length} scheduled tasks · hours-based and calendar-based`
-              : `${allHistory.length} history records · search across all equipment`}
-          </p>
-        </div>
+        <PageHeader
+          title="Maintenance Board"
+          subtitle={activeTab === 'tasks'
+            ? `${tasks.length} scheduled tasks · hours-based and calendar-based`
+            : `${allHistory.length} history records · search across all equipment`}
+        />
 
         {/* tab switcher */}
         <div className="flex gap-1 mb-5 bg-panel-surface border border-panel-line rounded-lg p-1 w-fit">
@@ -436,7 +435,7 @@ export default function Maintenance() {
           <select value={filterLine} onChange={e => setFilterLine(e.target.value)}
             className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
             <option value="">All Lines</option>
-            {['Line-1', 'Line-2', 'Black Start'].map(l => <option key={l}>{l}</option>)}
+            {['Line-1', 'Line-2', 'Common'].map(l => <option key={l}>{l}</option>)}
           </select>
           <select value={filterBasis} onChange={e => setFilterBasis(e.target.value)}
             className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
@@ -461,7 +460,7 @@ export default function Maintenance() {
             const c = COLORS[key]
             const open = !collapsed[key]
             return (
-              <div key={key} className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden">
+              <div key={key} className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden shadow-sm">
 
                 {/* section header */}
                 <button
@@ -530,7 +529,11 @@ export default function Maintenance() {
             )
           })}
 
-          {filtered.length === 0 && !loading && (
+          {loadError && !loading && (
+            <ErrorBanner message={loadError} onRetry={loadTasks} />
+          )}
+
+          {!loadError && filtered.length === 0 && !loading && (
             <div className="text-center py-16 text-ink-lo text-sm">
               No tasks match your filters.
             </div>
@@ -554,7 +557,7 @@ export default function Maintenance() {
               <select value={histFilterLine} onChange={e => setHistFilterLine(e.target.value)}
                 className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
                 <option value="">All Lines</option>
-                {['Line-1', 'Line-2', 'Common', 'Black Start'].map(l => <option key={l}>{l}</option>)}
+                {['Line-1', 'Line-2', 'Common'].map(l => <option key={l}>{l}</option>)}
               </select>
               <select value={histFilterCategory} onChange={e => setHistFilterCategory(e.target.value)}
                 className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
@@ -572,19 +575,16 @@ export default function Maintenance() {
 
             {/* history table */}
             {historyListLoading ? (
-              <div className="flex items-center justify-center h-48 text-ink-lo">
-                <div className="text-center">
-                  <div className="w-6 h-6 border-2 border-panel-line2 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
-                  <div className="text-sm">Loading history…</div>
-                </div>
-              </div>
+              <PageLoader label="Loading history" />
+            ) : histLoadError ? (
+              <ErrorBanner message={histLoadError} onRetry={loadAllHistory} />
             ) : histFiltered.length === 0 ? (
               <div className="text-center py-16 text-ink-lo text-sm">
                 No history records match your filters.
               </div>
             ) : (
               <>
-                <div className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden">
+                <div className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden shadow-sm">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-[10px] text-ink-lo uppercase tracking-widest border-b border-panel-line">
@@ -735,7 +735,7 @@ export default function Maintenance() {
             {/* maintenance history */}
             <div>
               <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-3">
-                Maintenance History
+                Maintenance History{history.length > 0 ? ` (${history.length})` : ''}
               </div>
 
               {historyLoading ? (

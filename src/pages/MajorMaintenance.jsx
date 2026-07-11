@@ -1,13 +1,9 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { MetricTile } from '../components/ui'
+import { ErrorBanner, MetricTile, PageHeader, PageLoader } from '../components/ui'
+import { fmtHoursUnit as fmtHours } from '../lib/format'
 
 /* ── helpers ──────────────────────────────────────────────────────────── */
-function fmtHours(n) {
-  if (n === null || n === undefined) return '—'
-  return Number(n).toLocaleString() + ' hrs'
-}
-
 function dgNumber(equipment) {
   const m = /\d+/.exec(equipment || '')
   return m ? parseInt(m[0], 10) : 0
@@ -43,7 +39,7 @@ function OverdueCell({ row }) {
 
 function OverhaulTable({ title, rows }) {
   return (
-    <div className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden">
+    <div className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden shadow-sm">
       <div className="px-4 py-3 border-b border-panel-line">
         <span className="text-sm font-semibold text-ink-hi">{title}</span>
       </div>
@@ -98,27 +94,28 @@ function OverhaulTable({ title, rows }) {
 
 /* ── main component ───────────────────────────────────────────────────── */
 export default function MajorMaintenance() {
-  const [rows,    setRows]    = useState([])
-  const [loading, setLoading] = useState(true)
+  const [rows,      setRows]      = useState([])
+  const [loading,   setLoading]   = useState(true)
+  const [loadError, setLoadError] = useState('')
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true)
-      const { data } = await supabase
-        .from('v_major_overhaul_status')
-        .select('*')
-      setRows(data || [])
-      setLoading(false)
-    }
-    load()
-  }, [])
+  async function load() {
+    setLoading(true)
+    setLoadError('')
+    const { data, error } = await supabase
+      .from('v_major_overhaul_status')
+      .select('*')
+    if (error) { setLoadError(error.message); setLoading(false); return }
+    setRows(data || [])
+    setLoading(false)
+  }
 
-  if (loading) return (
-    <div className="flex items-center justify-center h-64 text-ink-lo">
-      <div className="text-center">
-        <div className="w-6 h-6 border-2 border-panel-line2 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
-        <div className="text-sm">Loading major overhaul status…</div>
-      </div>
+  useEffect(() => { load() }, [])
+
+  if (loading) return <PageLoader label="Loading major overhaul status" />
+
+  if (loadError) return (
+    <div className="max-w-2xl">
+      <ErrorBanner message={loadError} onRetry={load} />
     </div>
   )
 
@@ -132,13 +129,10 @@ export default function MajorMaintenance() {
   return (
     <div className="max-w-5xl">
 
-      {/* header */}
-      <div className="mb-5">
-        <h1 className="text-2xl font-bold text-ink-hi tracking-tight">Major Maintenance</h1>
-        <p className="text-ink-mid text-sm mt-0.5">
-          12,000-hour major overhaul tracking — engines and turbochargers
-        </p>
-      </div>
+      <PageHeader
+        title="Major Maintenance"
+        subtitle="12,000-hour major overhaul tracking — engines and turbochargers"
+      />
 
       {/* KPI strip */}
       <div className="grid grid-cols-3 gap-3 mb-6 max-w-3xl">

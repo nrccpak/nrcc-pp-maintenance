@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { ErrorBanner, PageHeader } from '../components/ui'
 
 const DATA_STATUS_STYLES = {
   'Confirmed':    'bg-emerald-50 text-emerald-700 border border-emerald-200',
@@ -29,16 +30,17 @@ function Field({ label, value }) {
 
 const PAGE_SIZE = 25
 
-const LINE_OPTIONS   = ['Line-1', 'Line-2', 'Common', 'Black Start']
+const LINE_OPTIONS   = ['Line-1', 'Line-2', 'Common']
 const STATUS_OPTIONS = ['Confirmed', 'Field-verify', 'GAP', 'Partial-GAP']
 
 export default function EquipmentRegistry() {
   /* ── data ─────────────────────────────────────────────────── */
-  const [rows,    setRows]    = useState([])
-  const [total,   setTotal]   = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [systems, setSystems] = useState([])
-  const [summary, setSummary] = useState({})
+  const [rows,      setRows]      = useState([])
+  const [total,     setTotal]     = useState(0)
+  const [loading,   setLoading]   = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [systems,   setSystems]   = useState([])
+  const [summary,   setSummary]   = useState({})
 
   /* ── filters ──────────────────────────────────────────────── */
   const [search,       setSearch]       = useState('')
@@ -57,8 +59,8 @@ export default function EquipmentRegistry() {
 
   /* ── load reference data ──────────────────────────────────── */
   useEffect(() => {
-    supabase.from('systems').select('name').order('name')
-      .then(({ data }) => setSystems((data || []).map(r => r.name)))
+    supabase.from('systems').select('system_name').order('system_name')
+      .then(({ data }) => setSystems((data || []).map(r => r.system_name)))
 
     // status summary counts
     supabase.from('equipment').select('data_status')
@@ -73,6 +75,7 @@ export default function EquipmentRegistry() {
   /* ── load filtered table ──────────────────────────────────── */
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadError('')
     let q = supabase
       .from('equipment')
       .select('*', { count: 'exact' })
@@ -85,7 +88,8 @@ export default function EquipmentRegistry() {
     if (filterStatus) q = q.eq('data_status', filterStatus)
 
     const { data, count, error } = await q
-    if (!error) { setRows(data || []); setTotal(count || 0) }
+    if (error) setLoadError(error.message)
+    else { setRows(data || []); setTotal(count || 0) }
     setLoading(false)
   }, [search, filterLine, filterSystem, filterStatus, page])
 
@@ -147,13 +151,10 @@ export default function EquipmentRegistry() {
       {/* ── MAIN COLUMN ────────────────────────────────────── */}
       <div className={`flex flex-col flex-1 min-w-0 transition-all duration-200 ${selected ? 'pr-[26rem]' : ''}`}>
 
-        {/* header */}
-        <div className="mb-5">
-          <h1 className="text-2xl font-bold text-ink-hi tracking-tight">Equipment Registry</h1>
-          <p className="text-ink-mid text-sm mt-0.5">
-            {total} component{total !== 1 ? 's' : ''} · component-level granularity
-          </p>
-        </div>
+        <PageHeader
+          title="Equipment Registry"
+          subtitle={`${total} component${total !== 1 ? 's' : ''} · component-level granularity`}
+        />
 
         {/* status summary pills */}
         <div className="flex flex-wrap gap-2 mb-4">
@@ -205,7 +206,7 @@ export default function EquipmentRegistry() {
         </div>
 
         {/* table */}
-        <div className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden flex-1 flex flex-col">
+        <div className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden flex-1 flex flex-col shadow-sm">
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-sm min-w-[780px]">
               <thead>
@@ -223,8 +224,14 @@ export default function EquipmentRegistry() {
                 {loading ? (
                   <tr>
                     <td colSpan={7} className="text-center py-16 text-ink-lo">
-                      <div className="inline-block w-5 h-5 border-2 border-panel-line2 border-t-blue-500 rounded-full animate-spin mb-2" />
+                      <div className="inline-block w-5 h-5 border-2 border-panel-line2 border-t-ink-mid rounded-full animate-spin mb-2" />
                       <div className="text-xs">Loading equipment…</div>
+                    </td>
+                  </tr>
+                ) : loadError ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-6">
+                      <ErrorBanner message={loadError} onRetry={load} />
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (
@@ -395,4 +402,3 @@ export default function EquipmentRegistry() {
     </div>
   )
 }
-

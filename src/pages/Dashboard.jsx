@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react'
 import { useKpis, useEquipmentStatus, useOverdueMaintenance, useEquipmentTasks } from '../lib/hooks'
-import { MetricTile, Spinner } from '../components/ui'
+import { MetricTile, Spinner, ErrorBanner, PageHeader } from '../components/ui'
+import { fmtHours, fmtDate } from '../lib/format'
 
-function fmtHours(h) {
-  if (h === null || h === undefined) return '—'
-  return Number(h).toLocaleString('en-US', { maximumFractionDigits: 0 })
+function latestReadingIso(rows) {
+  const dates = (rows || []).map(r => r.status_as_of).filter(Boolean)
+  if (dates.length === 0) return null
+  return dates.reduce((max, d) => (d > max ? d : max))
 }
 
 function currentDisplay(t) {
@@ -23,7 +25,8 @@ function overdueDisplay(t) {
 }
 
 function KpiStrip({ onOverdueClick }) {
-  const { data, loading } = useKpis()
+  const { data, loading, error, refetch } = useKpis()
+  if (error) return <ErrorBanner message={error.message} onRetry={refetch} />
   if (loading || !data) return <div className="h-[76px]"><Spinner /></div>
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -60,8 +63,8 @@ function KpiStrip({ onOverdueClick }) {
   )
 }
 
-function GensetGrid({ onSelectTasks }) {
-  const { data, loading } = useEquipmentStatus()
+function GensetGrid({ data, loading, error, onRetry, onSelectTasks }) {
+  if (error) return <ErrorBanner message={error.message} onRetry={onRetry} />
   if (loading || !data) return <Spinner label="Reading meters" />
 
   // engines first, then other hours-tracked items
@@ -146,7 +149,7 @@ function EquipmentTasksPanel({ selection, onClose }) {
         dueState: selection.dueState,
       }
     : null
-  const { data, loading } = useEquipmentTasks(criteria)
+  const { data, loading, error, refetch } = useEquipmentTasks(criteria)
   if (!selection) return null
 
   const accent = selection.dueState === 'Overdue' ? 'text-st-over' : 'text-st-warn'
@@ -166,7 +169,9 @@ function EquipmentTasksPanel({ selection, onClose }) {
           <button onClick={onClose} className="text-2xl leading-none text-ink-lo hover:text-ink-hi">×</button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {loading || !data ? (
+          {error ? (
+            <ErrorBanner message={error.message} onRetry={refetch} />
+          ) : loading || !data ? (
             <Spinner />
           ) : data.length === 0 ? (
             <div className="py-10 text-center text-sm text-ink-lo">No matching tasks.</div>
@@ -190,7 +195,8 @@ function EquipmentTasksPanel({ selection, onClose }) {
 }
 
 function OverduePanel({ expanded, onExpand, onCollapse, panelRef }) {
-  const { data, loading } = useOverdueMaintenance()
+  const { data, loading, error, refetch } = useOverdueMaintenance()
+  if (error) return <ErrorBanner message={error.message} onRetry={refetch} />
   if (loading || !data) return <Spinner />
 
   const PREVIEW_SIZE = 12
@@ -263,25 +269,32 @@ export default function Dashboard() {
   const [overdueExpanded, setOverdueExpanded] = useState(false)
   const overdueRef = useRef(null)
   const [equipmentSelection, setEquipmentSelection] = useState(null)
+  const { data: equipmentData, loading: equipmentLoading, error: equipmentError, refetch: refetchEquipment } = useEquipmentStatus()
 
   const expandOverdue = () => {
     setOverdueExpanded(true)
     overdueRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  const readingsAsOf = fmtDate(latestReadingIso(equipmentData))
+
   return (
-    <div className="mx-auto max-w-7xl px-6 py-6">
-      <header className="mb-6 flex items-baseline justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-ink-hi">Plant Status</h1>
-          <p className="text-sm text-ink-lo">Equipment, running hours, and maintenance due</p>
-        </div>
-        <div className="font-mono text-xs text-ink-lo">readings as of 29 Jun 2026</div>
-      </header>
+    <div>
+      <PageHeader
+        title="Plant Status"
+        subtitle="Equipment, running hours, and maintenance due"
+        right={readingsAsOf ? `readings as of ${readingsAsOf}` : equipmentLoading ? 'reading meters…' : ''}
+      />
 
       <div className="mb-6"><KpiStrip onOverdueClick={expandOverdue} /></div>
       <div className="mb-6">
-        <GensetGrid onSelectTasks={(item, dueState) => setEquipmentSelection({ item, dueState })} />
+        <GensetGrid
+          data={equipmentData}
+          loading={equipmentLoading}
+          error={equipmentError}
+          onRetry={refetchEquipment}
+          onSelectTasks={(item, dueState) => setEquipmentSelection({ item, dueState })}
+        />
       </div>
       <OverduePanel
         expanded={overdueExpanded}

@@ -1,21 +1,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { ErrorBanner } from '../components/ui'
+import { ErrorBanner, PageHeader, PageLoader } from '../components/ui'
+import { fmtHours, fmtDate, todayStr } from '../lib/format'
 
 /* ── helpers ──────────────────────────────────────────────────────────── */
 const STATUS_OPTIONS = ['Running', 'Standby', 'Shutdown', 'Tripped', 'Under Maintenance']
-
-function todayStr() { return new Date().toISOString().slice(0, 10) }
-
-function fmtHours(n) {
-  if (n === null || n === undefined) return '—'
-  return Number(n).toLocaleString()
-}
-
-function fmtDate(iso) {
-  if (!iso) return 'never read'
-  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-}
 
 function rowKey(item) {
   return `${item.line}|${item.equipment}|${item.component_type}`
@@ -117,14 +106,7 @@ export default function LogReadings() {
   }
 
   /* ── render ──────────────────────────────────────────────────────── */
-  if (loading) return (
-    <div className="flex items-center justify-center h-64 text-gray-500">
-      <div className="text-center">
-        <div className="w-6 h-6 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
-        <div className="text-sm">Loading equipment…</div>
-      </div>
-    </div>
-  )
+  if (loading) return <PageLoader label="Loading equipment" />
 
   if (loadError) return (
     <div className="max-w-2xl">
@@ -137,36 +119,33 @@ export default function LogReadings() {
   return (
     <div className="max-w-4xl">
 
-      {/* header */}
-      <div className="mb-5 flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Log Readings</h1>
-          <p className="text-gray-400 text-sm mt-0.5">
-            Record hour-meter and status readings for all {items.length} hour-tracked items
-          </p>
-        </div>
-        <div>
-          <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1">Reading Date</label>
-          <input
-            type="date"
-            value={date}
-            onChange={e => setDate(e.target.value)}
-            className="bg-[#161b22] border border-[#30363d] text-gray-200 rounded px-3 py-1.5 text-sm
-                       focus:outline-none focus:border-blue-500/70"
-          />
-        </div>
-      </div>
+      <PageHeader
+        title="Log Readings"
+        subtitle={`Record hour-meter and status readings for all ${items.length} hour-tracked items`}
+        right={
+          <label className="flex items-center gap-2 font-sans">
+            <span className="text-[10px] uppercase tracking-widest text-ink-lo">Reading Date</span>
+            <input
+              type="date"
+              value={date}
+              onChange={e => setDate(e.target.value)}
+              className="bg-panel-surface border border-panel-line text-ink-hi rounded px-3 py-1.5 text-sm
+                         focus:outline-none focus:border-blue-500/70"
+            />
+          </label>
+        }
+      />
 
       {/* per-line tables */}
       <div className="space-y-5">
         {lines.map(line => (
-          <div key={line} className="bg-[#161b22] border border-[#30363d] rounded-lg overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#30363d]">
-              <span className="text-sm font-semibold text-gray-200">{line}</span>
+          <div key={line} className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden shadow-sm">
+            <div className="px-4 py-3 border-b border-panel-line">
+              <span className="text-sm font-semibold text-ink-hi">{line}</span>
             </div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-[10px] text-gray-600 uppercase tracking-widest border-b border-[#21262d]">
+                <tr className="text-[10px] text-ink-lo uppercase tracking-widest border-b border-panel-line">
                   <th className="text-left px-4 py-2 font-medium">Equipment</th>
                   <th className="text-left px-4 py-2 font-medium">Previous Reading</th>
                   <th className="text-left px-4 py-2 font-medium w-40">New Hours</th>
@@ -182,14 +161,14 @@ export default function LogReadings() {
                   const isLower = !isInvalid && hoursNum !== null && r.current_hours !== null
                     && hoursNum < Number(r.current_hours)
                   return (
-                    <tr key={key} className={`border-b border-[#1c2128] ${i % 2 === 0 ? '' : 'bg-[#0d1117]/20'}`}>
+                    <tr key={key} className={`border-b border-panel-line ${i % 2 === 0 ? '' : 'bg-panel-raised'}`}>
                       <td className="px-4 py-2.5">
-                        <div className="text-gray-100 font-medium text-sm leading-tight">{r.equipment}</div>
-                        <div className="text-gray-500 text-[10px] font-mono mt-0.5">{r.component_type}</div>
+                        <div className="text-ink-hi font-medium text-sm leading-tight">{r.equipment}</div>
+                        <div className="text-ink-lo text-[10px] font-mono mt-0.5">{r.component_type}</div>
                       </td>
-                      <td className="px-4 py-2.5 text-gray-400 text-sm font-mono">
+                      <td className="px-4 py-2.5 text-ink-mid text-sm font-mono tnum">
                         {fmtHours(r.current_hours)} hrs
-                        <div className="text-gray-600 text-[10px] mt-0.5">{fmtDate(r.status_as_of)}</div>
+                        <div className="text-ink-lo text-[10px] mt-0.5">{fmtDate(r.status_as_of) || 'never read'}</div>
                       </td>
                       <td className="px-4 py-2.5">
                         <input
@@ -197,22 +176,22 @@ export default function LogReadings() {
                           value={entry.hours}
                           onChange={e => updateEntry(key, { hours: e.target.value })}
                           placeholder="Enter hours…"
-                          className={`w-full bg-[#0e1116] border rounded px-2.5 py-1.5 text-sm font-mono
-                                      placeholder-gray-600 focus:outline-none focus:border-blue-500/70
-                                      ${isInvalid ? 'border-red-700 text-red-400' : 'border-[#30363d] text-gray-200'}`}
+                          className={`w-full bg-panel-bg border rounded px-2.5 py-1.5 text-sm font-mono tnum
+                                      placeholder-ink-lo focus:outline-none focus:border-blue-500/70
+                                      ${isInvalid ? 'border-red-400 text-red-700' : 'border-panel-line text-ink-hi'}`}
                         />
                         {isLower && (
-                          <div className="text-amber-400 text-[10px] mt-1">lower than previous reading</div>
+                          <div className="text-st-warn text-[10px] mt-1">lower than previous reading</div>
                         )}
                         {isInvalid && (
-                          <div className="text-red-400 text-[10px] mt-1">not a valid number</div>
+                          <div className="text-st-over text-[10px] mt-1">not a valid number</div>
                         )}
                       </td>
                       <td className="px-4 py-2.5">
                         <select
                           value={entry.status}
                           onChange={e => updateEntry(key, { status: e.target.value })}
-                          className="w-full bg-[#0e1116] border border-[#30363d] text-gray-200 rounded
+                          className="w-full bg-panel-bg border border-panel-line text-ink-hi rounded
                                      px-2.5 py-1.5 text-sm focus:outline-none focus:border-blue-500/70"
                         >
                           {STATUS_OPTIONS.map(s => <option key={s}>{s}</option>)}
@@ -228,8 +207,8 @@ export default function LogReadings() {
       </div>
 
       {/* footer / submit */}
-      <div className="sticky bottom-0 mt-5 bg-[#0e1116] border-t border-[#30363d] py-4 flex items-center gap-4">
-        <span className="text-sm text-gray-400">
+      <div className="sticky bottom-0 mt-5 -mx-6 border-t border-panel-line bg-panel-bg/95 px-6 py-4 backdrop-blur flex items-center gap-4">
+        <span className="text-sm text-ink-mid">
           {filled.length} of {items.length} readings entered
         </span>
         <button
@@ -240,8 +219,8 @@ export default function LogReadings() {
         >
           {saving ? 'Saving…' : `Submit ${filled.length || ''} Reading${filled.length === 1 ? '' : 's'}`}
         </button>
-        {saveSuccess && <span className="text-emerald-400 text-sm">✓ {saveSuccess}</span>}
-        {saveError && <span className="text-red-400 text-sm">{saveError}</span>}
+        {saveSuccess && <span className="text-emerald-700 text-sm">✓ {saveSuccess}</span>}
+        {saveError && <span className="text-red-700 text-sm">{saveError}</span>}
       </div>
     </div>
   )

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { ErrorBanner } from '../components/ui'
+import { ErrorBanner, PageHeader, PageLoader } from '../components/ui'
 
 /* ── constants ────────────────────────────────────────────────────────── */
 const STATUS_ORDER = ['GAP', 'Partial-GAP', 'Field-verify']
@@ -162,14 +162,7 @@ export default function DataGaps() {
   const totalFiltered = filtered.length
 
   /* ── render ──────────────────────────────────────────────────────── */
-  if (loading) return (
-    <div className="flex items-center justify-center h-64 text-ink-lo">
-      <div className="text-center">
-        <div className="w-6 h-6 border-2 border-panel-line2 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
-        <div className="text-sm">Loading data gaps…</div>
-      </div>
-    </div>
-  )
+  if (loading) return <PageLoader label="Loading data gaps" />
 
   if (loadError) return (
     <div className="max-w-2xl">
@@ -183,18 +176,19 @@ export default function DataGaps() {
       {/* ── MAIN COLUMN ──────────────────────────────────────────────── */}
       <div className={`flex flex-col flex-1 min-w-0 transition-all duration-200 ${selected ? 'pr-[26rem]' : ''}`}>
 
-        {/* header */}
-        <div className="mb-5">
-          <h1 className="text-2xl font-bold text-ink-hi tracking-tight">Data Gaps</h1>
-          <p className="text-ink-mid text-sm mt-0.5">
-            {totalGaps} component{totalGaps !== 1 ? 's' : ''} need field verification
-            {confirmed > 0 && (
-              <span className="ml-2 text-emerald-700 font-mono">
-                · {confirmed} confirmed this session ✓
-              </span>
-            )}
-          </p>
-        </div>
+        <PageHeader
+          title="Data Gaps"
+          subtitle={
+            <>
+              {totalGaps} component{totalGaps !== 1 ? 's' : ''} need field verification
+              {confirmed > 0 && (
+                <span className="ml-2 font-mono text-emerald-700">
+                  · {confirmed} confirmed this session ✓
+                </span>
+              )}
+            </>
+          }
+        />
 
         {/* summary pills */}
         <div className="flex flex-wrap gap-2 mb-4">
@@ -264,7 +258,7 @@ export default function DataGaps() {
             const m    = STATUS_META[key]
             const open = !collapsed[key]
             return (
-              <div key={key} className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden">
+              <div key={key} className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden shadow-sm">
 
                 {/* section header */}
                 <button

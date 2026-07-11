@@ -99,6 +99,29 @@
     states (mocked Supabase responses covering every due-state/data-status color), `npx oxlint src/`, and
     `npm run build` — no new lint errors, clean build, no visual regressions.
 
+- **✅ Done (2026-07-11):** post-merge design consistency pass (1.6 partially) — after merging `main`'s
+  light-platinum retheme, a full re-check found two real problems the merge couldn't catch, plus the
+  duplication called out in 1.6.
+  - **Fixed: `LogReadings.jsx` was still fully dark-themed** (hardcoded `#161b22` cards, `text-white`
+    heading, `gray-*` inks) — it was written on this branch after the token work but before `main`'s
+    retheme, and `main` never touched the file, so it merged cleanly while rendering broken (white heading
+    on a near-white page). Now on the same `panel-*`/`ink-*` tokens as every other page.
+  - **Fixed: page padding.** Only the Dashboard self-applied outer padding; the other five pages sat flush
+    against the sidebar and viewport top. Padding (and a `max-w-7xl` readable-width cap) now lives once in
+    `Layout`'s `<main>`, and Dashboard's own wrapper was removed.
+  - **1.6 (partial):** new `src/lib/format.js` (`fmtHours`, `fmtHoursUnit`, `fmtDate`, `todayStr`) replaces
+    four per-page copies with slightly diverging formats; new shared `PageHeader` (one heading
+    hierarchy + right-hand slot) and `PageLoader` (replaces six copy-pasted inline spinners, some still
+    dark-themed). Remaining 1.6 items (shared `FilterBar`, `DetailPanel`, `StatusBadge`) are still open —
+    to be done opportunistically as pages get touched.
+  - Polish: `shadow-sm` card depth on the light theme, `MetricTile` value weight per stat-tile
+    conventions (semibold, proportional figures), spinner accents unified to neutral ink, `ErrorBanner`
+    recolored for the light palette (it still used dark-mode reds), real `<title>`/meta description in
+    `index.html` (was `nrcc-dashboard`).
+  - Verified via Playwright screenshots of all six pages plus the Maintenance detail panel with realistic
+    data; the accidental unreachable-network run also confirmed every page's `ErrorBanner` + Retry path
+    renders correctly on the light theme. `oxlint` clean; production build succeeds.
+
 ---
 
 ## Executive summary — start here
@@ -186,7 +209,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Medium
 - **Priority:** Medium
 
-### 1.6 Duplicated primitives across pages
+### 1.6 Duplicated primitives across pages ⚠️ Partially fixed 2026-07-11 (format helpers, PageHeader, PageLoader done; FilterBar/DetailPanel/StatusBadge still open)
 - **Area:** Code architecture & logic
 - **Issue:** `fmtHours` is defined three times (Dashboard, Maintenance, MajorMaintenance) with slightly
   different formats; `StatusBadge` exists twice (Equipment, DataGaps) with diverging style maps; the

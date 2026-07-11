@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import { ErrorBanner } from '../components/ui'
+import { ErrorBanner, PageHeader } from '../components/ui'
 
 const DATA_STATUS_STYLES = {
   'Confirmed':    'bg-emerald-50 text-emerald-700 border border-emerald-200',
@@ -151,13 +151,10 @@ export default function EquipmentRegistry() {
       {/* ── MAIN COLUMN ────────────────────────────────────── */}
       <div className={`flex flex-col flex-1 min-w-0 transition-all duration-200 ${selected ? 'pr-[26rem]' : ''}`}>
 
-        {/* header */}
-        <div className="mb-5">
-          <h1 className="text-2xl font-bold text-ink-hi tracking-tight">Equipment Registry</h1>
-          <p className="text-ink-mid text-sm mt-0.5">
-            {total} component{total !== 1 ? 's' : ''} · component-level granularity
-          </p>
-        </div>
+        <PageHeader
+          title="Equipment Registry"
+          subtitle={`${total} component${total !== 1 ? 's' : ''} · component-level granularity`}
+        />
 
         {/* status summary pills */}
         <div className="flex flex-wrap gap-2 mb-4">
@@ -209,7 +206,7 @@ export default function EquipmentRegistry() {
         </div>
 
         {/* table */}
-        <div className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden flex-1 flex flex-col">
+        <div className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden flex-1 flex flex-col shadow-sm">
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-sm min-w-[780px]">
               <thead>
@@ -227,7 +224,7 @@ export default function EquipmentRegistry() {
                 {loading ? (
                   <tr>
                     <td colSpan={7} className="text-center py-16 text-ink-lo">
-                      <div className="inline-block w-5 h-5 border-2 border-panel-line2 border-t-blue-500 rounded-full animate-spin mb-2" />
+                      <div className="inline-block w-5 h-5 border-2 border-panel-line2 border-t-ink-mid rounded-full animate-spin mb-2" />
                       <div className="text-xs">Loading equipment…</div>
                     </td>
                   </tr>

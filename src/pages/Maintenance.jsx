@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { ErrorBanner } from '../components/ui'
+import { ErrorBanner, PageHeader, PageLoader } from '../components/ui'
+import { fmtHoursUnit as fmtHours, todayStr } from '../lib/format'
 
 /* ── helpers ──────────────────────────────────────────────────────────── */
 function urgencyDisplay(task) {
@@ -114,14 +115,6 @@ export default function Maintenance() {
   const [histPage,           setHistPage]           = useState(1)
   const [expandedHistId,     setExpandedHistId]     = useState(null)
   const [histLoadError,      setHistLoadError]      = useState('')
-
-  /* ── helpers ────────────────────────────────────────────────────── */
-  function todayStr() { return new Date().toISOString().slice(0, 10) }
-
-  function fmtHours(n) {
-    if (n == null) return '—'
-    return Number(n).toLocaleString() + ' hrs'
-  }
 
   /* ── data loading ───────────────────────────────────────────────── */
   async function loadTasks() {
@@ -384,14 +377,7 @@ export default function Maintenance() {
   }
 
   /* ── render ──────────────────────────────────────────────────────── */
-  if (loading) return (
-    <div className="flex items-center justify-center h-64 text-ink-lo">
-      <div className="text-center">
-        <div className="w-6 h-6 border-2 border-panel-line2 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
-        <div className="text-sm">Loading maintenance tasks…</div>
-      </div>
-    </div>
-  )
+  if (loading) return <PageLoader label="Loading maintenance tasks" />
 
   return (
     <div className="flex h-full">
@@ -399,14 +385,12 @@ export default function Maintenance() {
       {/* ── MAIN COLUMN ──────────────────────────────────────────────── */}
       <div className={`flex flex-col flex-1 min-w-0 transition-all duration-200 ${selected && activeTab === 'tasks' ? 'pr-[26rem]' : ''}`}>
 
-        <div className="mb-5">
-          <h1 className="text-2xl font-bold text-ink-hi tracking-tight">Maintenance Board</h1>
-          <p className="text-ink-mid text-sm mt-0.5">
-            {activeTab === 'tasks'
-              ? `${tasks.length} scheduled tasks · hours-based and calendar-based`
-              : `${allHistory.length} history records · search across all equipment`}
-          </p>
-        </div>
+        <PageHeader
+          title="Maintenance Board"
+          subtitle={activeTab === 'tasks'
+            ? `${tasks.length} scheduled tasks · hours-based and calendar-based`
+            : `${allHistory.length} history records · search across all equipment`}
+        />
 
         {/* tab switcher */}
         <div className="flex gap-1 mb-5 bg-panel-surface border border-panel-line rounded-lg p-1 w-fit">
@@ -476,7 +460,7 @@ export default function Maintenance() {
             const c = COLORS[key]
             const open = !collapsed[key]
             return (
-              <div key={key} className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden">
+              <div key={key} className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden shadow-sm">
 
                 {/* section header */}
                 <button
@@ -591,12 +575,7 @@ export default function Maintenance() {
 
             {/* history table */}
             {historyListLoading ? (
-              <div className="flex items-center justify-center h-48 text-ink-lo">
-                <div className="text-center">
-                  <div className="w-6 h-6 border-2 border-panel-line2 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
-                  <div className="text-sm">Loading history…</div>
-                </div>
-              </div>
+              <PageLoader label="Loading history" />
             ) : histLoadError ? (
               <ErrorBanner message={histLoadError} onRetry={loadAllHistory} />
             ) : histFiltered.length === 0 ? (
@@ -605,7 +584,7 @@ export default function Maintenance() {
               </div>
             ) : (
               <>
-                <div className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden">
+                <div className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden shadow-sm">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-[10px] text-ink-lo uppercase tracking-widest border-b border-panel-line">

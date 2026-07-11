@@ -1,21 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import { ErrorBanner, PageHeader } from '../components/ui'
-
-const DATA_STATUS_STYLES = {
-  'Confirmed':    'bg-emerald-50 text-emerald-700 border border-emerald-200',
-  'Field-verify': 'bg-amber-50  text-amber-700  border border-amber-200',
-  'GAP':          'bg-red-50    text-red-700    border border-red-200',
-  'Partial-GAP':  'bg-orange-50 text-orange-700 border border-orange-200',
-}
-
-function StatusBadge({ status }) {
-  return (
-    <span className={`px-2 py-0.5 rounded text-xs font-mono whitespace-nowrap ${DATA_STATUS_STYLES[status] || 'bg-gray-100 text-ink-mid'}`}>
-      {status}
-    </span>
-  )
-}
+import {
+  ErrorBanner, PageHeader, StatusBadge, DATA_STATUS_STYLES,
+  FilterBar, SearchInput, FilterSelect,
+} from '../components/ui'
+import DetailPanel from '../components/DetailPanel'
 
 function Field({ label, value }) {
   return (
@@ -183,28 +172,22 @@ export default function EquipmentRegistry() {
           ))}
         </div>
 
-        {/* filter bar */}
-        <div className="flex flex-wrap gap-2 mb-4 items-center">
-          <input
-            type="text"
+        <FilterBar>
+          <SearchInput
             placeholder="Search equipment, component, description, location…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="bg-panel-surface border border-panel-line text-ink-hi placeholder-ink-lo
-                       rounded px-3 py-1.5 text-sm w-80 focus:outline-none focus:border-blue-500/70"
           />
 
-          <select value={filterLine} onChange={e => setFilterLine(e.target.value)}
-            className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
+          <FilterSelect value={filterLine} onChange={e => setFilterLine(e.target.value)}>
             <option value="">All Lines</option>
             {LINE_OPTIONS.map(l => <option key={l}>{l}</option>)}
-          </select>
+          </FilterSelect>
 
-          <select value={filterSystem} onChange={e => setFilterSystem(e.target.value)}
-            className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
+          <FilterSelect value={filterSystem} onChange={e => setFilterSystem(e.target.value)}>
             <option value="">All Systems</option>
             {systems.map(s => <option key={s}>{s}</option>)}
-          </select>
+          </FilterSelect>
 
           {hasFilters && (
             <button onClick={clearFilters}
@@ -212,7 +195,7 @@ export default function EquipmentRegistry() {
               Clear filters
             </button>
           )}
-        </div>
+        </FilterBar>
 
         {/* table */}
         <div className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden flex-1 flex flex-col shadow-sm">
@@ -316,76 +299,14 @@ export default function EquipmentRegistry() {
 
       {/* ── DETAIL PANEL ────────────────────────────────────── */}
       {selected && (
-        <div className="fixed right-0 top-0 h-full w-[26rem] bg-panel-surface border-l border-panel-line
-                        flex flex-col z-20 shadow-2xl">
-
-          {/* panel header */}
-          <div className="flex items-start justify-between px-5 pt-5 pb-4
-                          border-b border-panel-line sticky top-0 bg-panel-surface z-10">
-            <div className="flex-1 min-w-0 pr-3">
-              <div className="text-[10px] text-ink-lo font-mono uppercase tracking-widest mb-1">{selected.line}</div>
-              <div className="text-ink-hi font-semibold text-lg leading-tight truncate">{selected.equipment}</div>
-              <div className="text-ink-mid text-sm mt-0.5">{selected.component_type}</div>
-            </div>
-            <button onClick={() => setSelected(null)}
-              className="text-ink-lo hover:text-ink-hi text-2xl leading-none mt-0.5 flex-shrink-0">
-              ×
-            </button>
-          </div>
-
-          {/* panel body — scrollable */}
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-
-            {/* data status */}
-            <div>
-              <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-2">Data Status</div>
-              {editing ? (
-                <select value={editStatus} onChange={e => setEditStatus(e.target.value)}
-                  className="bg-panel-bg border border-panel-line text-ink-hi rounded
-                             px-3 py-1.5 text-sm w-full focus:outline-none focus:border-blue-500/70">
-                  {STATUS_OPTIONS.map(s => <option key={s}>{s}</option>)}
-                </select>
-              ) : (
-                <StatusBadge status={selected.data_status} />
-              )}
-            </div>
-
-            <div className="border-t border-panel-line" />
-
-            <Field label="System"        value={selected.system} />
-            <Field label="Description"   value={selected.description} />
-            <Field label="Location"      value={selected.location} />
-            <Field label="Specification" value={selected.specification} />
-
-            {/* remarks */}
-            <div>
-              <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-2">Remarks</div>
-              {editing ? (
-                <textarea
-                  value={editRemarks}
-                  onChange={e => setEditRemarks(e.target.value)}
-                  rows={3}
-                  placeholder="Add a remark…"
-                  className="w-full bg-panel-bg border border-panel-line text-ink-hi rounded
-                             px-3 py-2 text-sm resize-none focus:outline-none focus:border-blue-500/70"
-                />
-              ) : (
-                <div className="text-ink-mid text-sm leading-relaxed">
-                  {selected.remarks || <span className="text-ink-lo italic">—</span>}
-                </div>
-              )}
-            </div>
-
-            {saveError && (
-              <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">
-                {saveError}
-              </div>
-            )}
-          </div>
-
-          {/* panel footer */}
-          <div className="px-5 py-4 border-t border-panel-line sticky bottom-0 bg-panel-surface">
-            {editing ? (
+        <DetailPanel
+          kicker={selected.line}
+          title={selected.equipment}
+          subtitle={selected.component_type}
+          onClose={() => setSelected(null)}
+          bodyClass="space-y-5"
+          footer={
+            editing ? (
               <div className="flex gap-2">
                 <button onClick={handleSave} disabled={saving}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50
@@ -404,9 +325,55 @@ export default function EquipmentRegistry() {
                            text-ink-mid hover:text-ink-hi text-sm py-2 rounded transition-colors">
                 Edit Status / Remarks
               </button>
+            )
+          }
+        >
+          {/* data status */}
+          <div>
+            <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-2">Data Status</div>
+            {editing ? (
+              <select value={editStatus} onChange={e => setEditStatus(e.target.value)}
+                className="bg-panel-bg border border-panel-line text-ink-hi rounded
+                           px-3 py-1.5 text-sm w-full focus:outline-none focus:border-blue-500/70">
+                {STATUS_OPTIONS.map(s => <option key={s}>{s}</option>)}
+              </select>
+            ) : (
+              <StatusBadge status={selected.data_status} />
             )}
           </div>
-        </div>
+
+          <div className="border-t border-panel-line" />
+
+          <Field label="System"        value={selected.system} />
+          <Field label="Description"   value={selected.description} />
+          <Field label="Location"      value={selected.location} />
+          <Field label="Specification" value={selected.specification} />
+
+          {/* remarks */}
+          <div>
+            <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-2">Remarks</div>
+            {editing ? (
+              <textarea
+                value={editRemarks}
+                onChange={e => setEditRemarks(e.target.value)}
+                rows={3}
+                placeholder="Add a remark…"
+                className="w-full bg-panel-bg border border-panel-line text-ink-hi rounded
+                           px-3 py-2 text-sm resize-none focus:outline-none focus:border-blue-500/70"
+              />
+            ) : (
+              <div className="text-ink-mid text-sm leading-relaxed">
+                {selected.remarks || <span className="text-ink-lo italic">—</span>}
+              </div>
+            )}
+          </div>
+
+          {saveError && (
+            <div className="text-xs text-st-over bg-st-over/10 border border-st-over/30 rounded px-3 py-2">
+              {saveError}
+            </div>
+          )}
+        </DetailPanel>
       )}
     </div>
   )

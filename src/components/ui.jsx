@@ -26,6 +26,52 @@ export function PageLoader({ label = 'Loading' }) {
   )
 }
 
+// Equipment data-quality statuses — single source for badge/pill colors
+// (previously duplicated with drifting values in Equipment and DataGaps).
+export const DATA_STATUS_STYLES = {
+  'Confirmed':    'bg-st-run/10 text-st-run border border-st-run/30',
+  'Field-verify': 'bg-st-warn/10 text-st-warn border border-st-warn/30',
+  'GAP':          'bg-st-over/10 text-st-over border border-st-over/30',
+  'Partial-GAP':  'bg-st-partial/10 text-st-partial border border-st-partial/30',
+}
+
+export function StatusBadge({ status }) {
+  return (
+    <span className={`px-2 py-0.5 rounded text-xs font-mono whitespace-nowrap ${DATA_STATUS_STYLES[status] || 'bg-panel-raised text-ink-mid border border-panel-line'}`}>
+      {status}
+    </span>
+  )
+}
+
+// Filter-bar primitives — shared styling for the search box + dropdowns
+// that appear above every table.
+export function FilterBar({ children, className = '' }) {
+  return <div className={`mb-4 flex flex-wrap items-center gap-2 ${className}`}>{children}</div>
+}
+
+export function SearchInput({ className = 'w-80', ...props }) {
+  return (
+    <input
+      type="text"
+      className={`bg-panel-surface border border-panel-line text-ink-hi placeholder-ink-lo
+                  rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500/70 ${className}`}
+      {...props}
+    />
+  )
+}
+
+export function FilterSelect({ children, ...props }) {
+  return (
+    <select
+      className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm
+                 focus:outline-none focus:border-blue-500/70"
+      {...props}
+    >
+      {children}
+    </select>
+  )
+}
+
 const DUE_STYLE = {
   Overdue: 'text-st-over border-st-over/40 bg-st-over/10',
   'Due Soon': 'text-st-warn border-st-warn/40 bg-st-warn/10',

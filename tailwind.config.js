@@ -28,6 +28,7 @@ export default {
           over: '#dc2626',     // overdue
           trip: '#e11d48',     // tripped
           idle: '#94a3b8',
+          partial: '#ea580c',  // partial data (Partial-GAP)
         },
       },
     },

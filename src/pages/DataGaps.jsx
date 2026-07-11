@@ -1,45 +1,38 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { ErrorBanner, PageHeader, PageLoader } from '../components/ui'
+import {
+  ErrorBanner, PageHeader, PageLoader, StatusBadge, DATA_STATUS_STYLES,
+  FilterBar, SearchInput, FilterSelect,
+} from '../components/ui'
+import DetailPanel from '../components/DetailPanel'
 
 /* ── constants ────────────────────────────────────────────────────────── */
 const STATUS_ORDER = ['GAP', 'Partial-GAP', 'Field-verify']
 
+// Badge/pill colors come from the shared DATA_STATUS_STYLES; this map adds
+// the page-specific accents (section header, dot, row selection, guide text).
 const STATUS_META = {
   'GAP': {
-    pill:  'bg-red-50 text-red-700 border border-red-200',
-    hdr:   'text-red-700',
-    dot:   'bg-red-500',
-    sel:   'border-l-red-700',
-    badge: 'bg-red-50 text-red-700 border border-red-200',
-    desc:  'No data available — field measurement required',
+    pill: DATA_STATUS_STYLES['GAP'],
+    hdr:  'text-st-over',
+    dot:  'bg-st-over',
+    sel:  'border-l-st-over',
+    desc: 'No data available — field measurement required',
   },
   'Partial-GAP': {
-    pill:  'bg-orange-50 text-orange-700 border border-orange-200',
-    hdr:   'text-orange-700',
-    dot:   'bg-orange-500',
-    sel:   'border-l-orange-700',
-    badge: 'bg-orange-50 text-orange-700 border border-orange-200',
-    desc:  'Partial data present — complete the missing fields in the field',
+    pill: DATA_STATUS_STYLES['Partial-GAP'],
+    hdr:  'text-st-partial',
+    dot:  'bg-st-partial',
+    sel:  'border-l-st-partial',
+    desc: 'Partial data present — complete the missing fields in the field',
   },
   'Field-verify': {
-    pill:  'bg-amber-50 text-amber-700 border border-amber-200',
-    hdr:   'text-amber-700',
-    dot:   'bg-amber-500',
-    sel:   'border-l-amber-700',
-    badge: 'bg-amber-50 text-amber-700 border border-amber-200',
-    desc:  'Data recorded — confirm on-site that it matches the actual asset',
+    pill: DATA_STATUS_STYLES['Field-verify'],
+    hdr:  'text-st-warn',
+    dot:  'bg-st-warn',
+    sel:  'border-l-st-warn',
+    desc: 'Data recorded — confirm on-site that it matches the actual asset',
   },
-}
-
-function StatusBadge({ status }) {
-  const s = STATUS_META[status]
-  if (!s) return <span className="text-ink-lo text-xs font-mono">{status}</span>
-  return (
-    <span className={`px-2 py-0.5 rounded text-xs font-mono whitespace-nowrap border ${s.badge}`}>
-      {status}
-    </span>
-  )
 }
 
 /* ── main component ───────────────────────────────────────────────────── */
@@ -216,26 +209,20 @@ export default function DataGaps() {
           </div>
         </div>
 
-        {/* filter bar */}
-        <div className="flex flex-wrap gap-2 mb-4 items-center">
-          <input
-            type="text"
+        <FilterBar>
+          <SearchInput
             placeholder="Search equipment, component, description, remarks…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="bg-panel-surface border border-panel-line text-ink-hi placeholder-ink-lo
-                       rounded px-3 py-1.5 text-sm w-80 focus:outline-none focus:border-blue-500/70"
           />
-          <select value={filterLine} onChange={e => setFilterLine(e.target.value)}
-            className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
+          <FilterSelect value={filterLine} onChange={e => setFilterLine(e.target.value)}>
             <option value="">All Lines</option>
             {['Line-1', 'Line-2', 'Common'].map(l => <option key={l}>{l}</option>)}
-          </select>
-          <select value={filterSystem} onChange={e => setFilterSystem(e.target.value)}
-            className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
+          </FilterSelect>
+          <FilterSelect value={filterSystem} onChange={e => setFilterSystem(e.target.value)}>
             <option value="">All Systems</option>
             {systems.map(s => <option key={s}>{s}</option>)}
-          </select>
+          </FilterSelect>
           {(search || filterLine || filterSystem) && (
             <button
               onClick={() => { setSearch(''); setFilterLine(''); setFilterSystem('') }}
@@ -248,7 +235,7 @@ export default function DataGaps() {
               showing {totalFiltered} of {totalGaps}
             </span>
           )}
-        </div>
+        </FilterBar>
 
         {/* grouped sections */}
         <div className="space-y-3">
@@ -341,123 +328,109 @@ export default function DataGaps() {
 
       {/* ── DETAIL PANEL ─────────────────────────────────────────────── */}
       {selected && (
-        <div className="fixed right-0 top-0 h-full w-[26rem] bg-panel-surface border-l border-panel-line flex flex-col z-20 shadow-2xl">
+        <DetailPanel
+          kicker={selected.line}
+          title={selected.equipment}
+          subtitle={selected.component_type}
+          onClose={() => setSelected(null)}
+          footer={
+            <>
+              {/* quick confirm */}
+              <button
+                onClick={() => handleSave('Confirmed')}
+                disabled={saving}
+                className="w-full bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40
+                           text-white text-sm font-medium py-2.5 rounded transition-colors">
+                {saving ? 'Saving…' : '✓ Mark as Confirmed'}
+              </button>
 
-          {/* header */}
-          <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-panel-line sticky top-0 bg-panel-surface">
-            <div className="flex-1 min-w-0 pr-3">
-              <div className="text-[10px] text-ink-lo font-mono uppercase tracking-widest mb-1">{selected.line}</div>
-              <div className="text-ink-hi font-semibold text-lg leading-tight">{selected.equipment}</div>
-              <div className="text-ink-mid text-sm mt-0.5">{selected.component_type}</div>
-            </div>
-            <button onClick={() => setSelected(null)}
-              className="text-ink-lo hover:text-ink-hi text-2xl leading-none mt-0.5 flex-shrink-0">
-              ×
-            </button>
-          </div>
-
-          {/* body */}
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-
-            {/* current status */}
-            <div>
-              <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-2">Current Status</div>
-              <StatusBadge status={selected.data_status} />
-              {STATUS_META[selected.data_status] && (
-                <div className="mt-1.5 text-xs text-ink-lo leading-relaxed">
-                  {STATUS_META[selected.data_status].desc}
-                </div>
+              {/* save status change */}
+              {editStatus !== selected.data_status && editStatus !== 'Confirmed' && (
+                <button
+                  onClick={() => handleSave()}
+                  disabled={saving}
+                  className="w-full border border-panel-line hover:border-blue-500/60
+                             text-ink-mid hover:text-ink-hi text-sm py-2 rounded transition-colors">
+                  {saving ? 'Saving…' : `Change to ${editStatus}`}
+                </button>
               )}
-            </div>
 
-            <div className="border-t border-panel-line" />
-
-            {/* fields */}
-            {[
-              { label: 'System',      value: selected.system },
-              { label: 'Description', value: selected.description },
-              { label: 'Location',    value: selected.location },
-            ].map(({ label, value }) => (
-              <div key={label}>
-                <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-1">{label}</div>
-                <div className="text-ink-hi text-sm">
-                  {value || <span className="text-ink-lo italic">—</span>}
-                </div>
-              </div>
-            ))}
-
-            <div className="border-t border-panel-line" />
-
-            {/* editable fields */}
-            <div>
-              <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-2">Update Status</div>
-              <select
-                value={editStatus}
-                onChange={e => setEditStatus(e.target.value)}
-                className="w-full bg-panel-bg border border-panel-line text-ink-hi rounded
-                           px-3 py-2 text-sm focus:outline-none focus:border-blue-500/70"
-              >
-                <option value="GAP">GAP</option>
-                <option value="Partial-GAP">Partial-GAP</option>
-                <option value="Field-verify">Field-verify</option>
-                <option value="Confirmed">Confirmed ✓</option>
-              </select>
-            </div>
-
-            <div>
-              <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-2">Remarks</div>
-              <textarea
-                value={editRemarks}
-                onChange={e => setEditRemarks(e.target.value)}
-                rows={4}
-                placeholder="Add notes about the gap or what was found in the field…"
-                className="w-full bg-panel-bg border border-panel-line text-ink-hi rounded
-                           px-3 py-2 text-sm resize-none focus:outline-none focus:border-blue-500/70"
-              />
-            </div>
-
-            {saveError && (
-              <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2.5">
-                {saveError}
+              {/* save remarks only */}
+              {editStatus === selected.data_status && editRemarks !== (selected.remarks || '') && (
+                <button
+                  onClick={() => handleSave()}
+                  disabled={saving}
+                  className="w-full border border-panel-line hover:border-blue-500/60
+                             text-ink-mid hover:text-ink-hi text-sm py-2 rounded transition-colors">
+                  {saving ? 'Saving…' : 'Save Remarks'}
+                </button>
+              )}
+            </>
+          }
+        >
+          {/* current status */}
+          <div>
+            <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-2">Current Status</div>
+            <StatusBadge status={selected.data_status} />
+            {STATUS_META[selected.data_status] && (
+              <div className="mt-1.5 text-xs text-ink-lo leading-relaxed">
+                {STATUS_META[selected.data_status].desc}
               </div>
             )}
           </div>
 
-          {/* footer */}
-          <div className="px-5 py-4 border-t border-panel-line sticky bottom-0 bg-panel-surface space-y-2">
+          <div className="border-t border-panel-line" />
 
-            {/* quick confirm */}
-            <button
-              onClick={() => handleSave('Confirmed')}
-              disabled={saving}
-              className="w-full bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40
-                         text-white text-sm font-medium py-2.5 rounded transition-colors">
-              {saving ? 'Saving…' : '✓ Mark as Confirmed'}
-            </button>
+          {/* fields */}
+          {[
+            { label: 'System',      value: selected.system },
+            { label: 'Description', value: selected.description },
+            { label: 'Location',    value: selected.location },
+          ].map(({ label, value }) => (
+            <div key={label}>
+              <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-1">{label}</div>
+              <div className="text-ink-hi text-sm">
+                {value || <span className="text-ink-lo italic">—</span>}
+              </div>
+            </div>
+          ))}
 
-            {/* save status change */}
-            {editStatus !== selected.data_status && editStatus !== 'Confirmed' && (
-              <button
-                onClick={() => handleSave()}
-                disabled={saving}
-                className="w-full border border-panel-line hover:border-blue-500/60
-                           text-ink-mid hover:text-ink-hi text-sm py-2 rounded transition-colors">
-                {saving ? 'Saving…' : `Change to ${editStatus}`}
-              </button>
-            )}
+          <div className="border-t border-panel-line" />
 
-            {/* save remarks only */}
-            {editStatus === selected.data_status && editRemarks !== (selected.remarks || '') && (
-              <button
-                onClick={() => handleSave()}
-                disabled={saving}
-                className="w-full border border-panel-line hover:border-blue-500/60
-                           text-ink-mid hover:text-ink-hi text-sm py-2 rounded transition-colors">
-                {saving ? 'Saving…' : 'Save Remarks'}
-              </button>
-            )}
+          {/* editable fields */}
+          <div>
+            <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-2">Update Status</div>
+            <select
+              value={editStatus}
+              onChange={e => setEditStatus(e.target.value)}
+              className="w-full bg-panel-bg border border-panel-line text-ink-hi rounded
+                         px-3 py-2 text-sm focus:outline-none focus:border-blue-500/70"
+            >
+              <option value="GAP">GAP</option>
+              <option value="Partial-GAP">Partial-GAP</option>
+              <option value="Field-verify">Field-verify</option>
+              <option value="Confirmed">Confirmed ✓</option>
+            </select>
           </div>
-        </div>
+
+          <div>
+            <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-2">Remarks</div>
+            <textarea
+              value={editRemarks}
+              onChange={e => setEditRemarks(e.target.value)}
+              rows={4}
+              placeholder="Add notes about the gap or what was found in the field…"
+              className="w-full bg-panel-bg border border-panel-line text-ink-hi rounded
+                         px-3 py-2 text-sm resize-none focus:outline-none focus:border-blue-500/70"
+            />
+          </div>
+
+          {saveError && (
+            <div className="text-xs text-st-over bg-st-over/10 border border-st-over/30 rounded px-3 py-2.5">
+              {saveError}
+            </div>
+          )}
+        </DetailPanel>
       )}
     </div>
   )

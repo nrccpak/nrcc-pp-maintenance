@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { ErrorBanner, PageHeader, PageLoader } from '../components/ui'
+import { ErrorBanner, PageHeader, PageLoader, FilterBar, SearchInput, FilterSelect } from '../components/ui'
 import { fmtHoursUnit as fmtHours, todayStr } from '../lib/format'
 
 /* ── helpers ──────────────────────────────────────────────────────────── */
@@ -422,27 +422,22 @@ export default function Maintenance() {
           ) : null)}
         </div>
 
-        {/* filter bar */}
-        <div className="flex flex-wrap gap-2 mb-5 items-center">
-          <input
-            type="text"
+        <FilterBar className="mb-5">
+          <SearchInput
             placeholder="Search equipment, component, task…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="bg-panel-surface border border-panel-line text-ink-hi placeholder-ink-lo
-                       rounded px-3 py-1.5 text-sm w-72 focus:outline-none focus:border-blue-500/70"
+            className="w-72"
           />
-          <select value={filterLine} onChange={e => setFilterLine(e.target.value)}
-            className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
+          <FilterSelect value={filterLine} onChange={e => setFilterLine(e.target.value)}>
             <option value="">All Lines</option>
             {['Line-1', 'Line-2', 'Common'].map(l => <option key={l}>{l}</option>)}
-          </select>
-          <select value={filterBasis} onChange={e => setFilterBasis(e.target.value)}
-            className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
+          </FilterSelect>
+          <FilterSelect value={filterBasis} onChange={e => setFilterBasis(e.target.value)}>
             <option value="">All Intervals</option>
             <option value="Hours">Hours-based</option>
             <option value="Calendar">Calendar-based</option>
-          </select>
+          </FilterSelect>
           {(search || filterLine || filterBasis) && (
             <button
               onClick={() => { setSearch(''); setFilterLine(''); setFilterBasis('') }}
@@ -450,7 +445,7 @@ export default function Maintenance() {
               Clear
             </button>
           )}
-        </div>
+        </FilterBar>
 
         {/* grouped sections */}
         <div className="space-y-3">
@@ -545,25 +540,21 @@ export default function Maintenance() {
         {activeTab === 'history' && (
           <div>
             {/* history filter bar */}
-            <div className="flex flex-wrap gap-2 mb-5 items-center">
-              <input
-                type="text"
+            <FilterBar className="mb-5">
+              <SearchInput
                 placeholder="Search equipment, component, description…"
                 value={histSearch}
                 onChange={e => setHistSearch(e.target.value)}
-                className="bg-panel-surface border border-panel-line text-ink-hi placeholder-ink-lo
-                           rounded px-3 py-1.5 text-sm w-72 focus:outline-none focus:border-blue-500/70"
+                className="w-72"
               />
-              <select value={histFilterLine} onChange={e => setHistFilterLine(e.target.value)}
-                className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
+              <FilterSelect value={histFilterLine} onChange={e => setHistFilterLine(e.target.value)}>
                 <option value="">All Lines</option>
                 {['Line-1', 'Line-2', 'Common'].map(l => <option key={l}>{l}</option>)}
-              </select>
-              <select value={histFilterCategory} onChange={e => setHistFilterCategory(e.target.value)}
-                className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
+              </FilterSelect>
+              <FilterSelect value={histFilterCategory} onChange={e => setHistFilterCategory(e.target.value)}>
                 <option value="">All Categories</option>
                 {['Routine Maintenance', 'Defect', 'PMS', 'CBM', 'Routine analysis', 'Weekly', 'Overhaul', 'Other'].map(c => <option key={c}>{c}</option>)}
-              </select>
+              </FilterSelect>
               {(histSearch || histFilterLine || histFilterCategory) && (
                 <button
                   onClick={() => { setHistSearch(''); setHistFilterLine(''); setHistFilterCategory('') }}
@@ -571,7 +562,7 @@ export default function Maintenance() {
                   Clear
                 </button>
               )}
-            </div>
+            </FilterBar>
 
             {/* history table */}
             {historyListLoading ? (

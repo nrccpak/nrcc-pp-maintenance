@@ -1,4 +1,13 @@
 /** @type {import('tailwindcss').Config} */
+
+// Every color below resolves through a CSS custom property (see index.css),
+// so the same utility classes (bg-panel-bg, text-st-over/30, etc.) render
+// differently per theme just by swapping the [data-theme] variable block —
+// no class-name changes needed anywhere in the app.
+function themeColor(varName) {
+  return `rgb(var(${varName}) / <alpha-value>)`
+}
+
 export default {
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
@@ -9,25 +18,26 @@ export default {
       },
       colors: {
         panel: {
-          bg: '#eef0f3',      // platinum page canvas
-          surface: '#ffffff',
-          raised: '#f5f6f8',
-          hover: '#e9ecf0',
-          line: '#dde1e7',
-          line2: '#c7cdd6',
+          bg:      themeColor('--panel-bg'),
+          surface: themeColor('--panel-surface'),
+          raised:  themeColor('--panel-raised'),
+          hover:   themeColor('--panel-hover'),
+          line:    themeColor('--panel-line'),
+          line2:   themeColor('--panel-line2'),
         },
         ink: {
-          hi: '#1b2430',
-          mid: '#5b6472',
-          lo: '#707b8a',
+          hi:  themeColor('--ink-hi'),
+          mid: themeColor('--ink-mid'),
+          lo:  themeColor('--ink-lo'),
         },
         st: {
-          run: '#16a34a',     // running
-          standby: '#2563eb', // standby
-          warn: '#d97706',     // due soon
-          over: '#dc2626',     // overdue
-          trip: '#e11d48',     // tripped
-          idle: '#94a3b8',
+          run:      themeColor('--st-run'),      // running / confirmed / success
+          standby:  themeColor('--st-standby'),  // standby / scheduled / informational
+          warn:     themeColor('--st-warn'),      // due soon / field-verify
+          over:     themeColor('--st-over'),      // overdue / gap / error
+          trip:     themeColor('--st-trip'),      // tripped
+          idle:     themeColor('--st-idle'),      // unknown / idle
+          partial:  themeColor('--st-partial'),   // partial-gap
         },
       },
     },

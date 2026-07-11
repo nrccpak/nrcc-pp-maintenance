@@ -6,6 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="NRCC power plant operations — equipment registry, running hours, and maintenance tracking" />
     <title>NRCC Power Plant Ops</title>
+    <script>
+      // Applied before first paint to avoid a flash of the wrong theme —
+      // ThemeProvider (src/lib/ThemeContext.jsx) owns this value afterward.
+      (function () {
+        var VALID = ['daylight', 'control-room', 'night']
+        var stored = localStorage.getItem('nrcc-theme')
+        document.documentElement.setAttribute('data-theme', VALID.indexOf(stored) !== -1 ? stored : 'daylight')
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

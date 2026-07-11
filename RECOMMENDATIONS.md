@@ -122,6 +122,32 @@
     data; the accidental unreachable-network run also confirmed every page's `ErrorBanner` + Retry path
     renders correctly on the light theme. `oxlint` clean; production build succeeds.
 
+- **✅ Done (2026-07-11):** 1.9, 1.6 (remainder), 1.10, 3.1 — the rest of the review list.
+  - **1.9** Equipment's search box interpolated raw user input straight into a PostgREST `or=()` filter
+    string — a comma, paren, or dot in the search text corrupted the filter grammar and silently emptied
+    the table. The `ilike` pattern is now double-quoted with embedded quotes/backslashes escaped, so any
+    input searches literally.
+  - **1.6 (remainder):** `StatusBadge`/`DATA_STATUS_STYLES` (was duplicated with diverging colors on
+    Equipment and DataGaps), `FilterBar`/`SearchInput`/`FilterSelect` (the search+dropdowns row repeated
+    near-identically on 4 pages), and a shared `DetailPanel` shell (the right-hand slide-in panel, was a
+    ~30-line duplicate on Equipment/DataGaps, now also used by Maintenance's task detail panel) are now
+    single components in `components/ui.jsx` and `components/DetailPanel.jsx`.
+  - **1.10** `Maintenance.jsx` (~940 lines, ~20 `useState` hooks) is split into
+    `pages/maintenance/{constants,TaskBoardTab,HistoryTab,TaskDetailPanel,LogCompletionModal}.jsx`; the
+    page file itself (~400 lines) now only owns data-fetching and the log-completion/nested-PM-sweep
+    business logic. Also made every route `React.lazy()` behind one `Suspense` boundary — this, not a
+    bundler config tweak, is what actually fixed the "chunks larger than 500 kB" build warning: each page
+    is now its own 4–25 kB chunk fetched on navigation instead of one bundle containing all six pages.
+  - **3.1** Three theme presets — Daylight (current default, unchanged), Control Room (dark slate), and
+    Night (near-black, high-contrast) — via CSS custom properties behind a `[data-theme]` attribute, a
+    sidebar picker, and `localStorage` persistence (see `### 3.1` below for the full writeup, including the
+    real gap found along the way: several soft pastel status colors picked up from `main`'s retheme
+    didn't move with the new theme variables at all and needed converting to the token system).
+  - Verified via Playwright screenshots of all six pages, both remaining detail panels, and the Log
+    Completion modal (with its nested-PM sweep-in checkboxes) across all three themes; confirmed Daylight
+    is pixel-identical to before this round. `oxlint` clean; production build succeeds with no bundle-size
+    warning.
+
 ---
 
 ## Executive summary — start here
@@ -140,7 +166,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 | 6 | ✅ *Fixed* — Dashboard header date "readings as of 29 Jun 2026" is hardcoded and will silently go stale | Code | **High** |
 | 7 | 25 maintenance tasks in "Unknown" state from missing baselines; 5 hour-meter regressions in the log | Data quality | **High** |
 | 8 | ✅ *Fixed* — Schema has no committed migration history — the DB is unreproducible from the repo | Other | Medium |
-| 9 | ⚠️ *Partially fixed* — Theme: consolidate the two coexisting styling systems first (done), then offer 2–3 preset themes (not started) | UI/UX | Medium |
+| 9 | ✅ *Fixed* — Theme: consolidate the two coexisting styling systems, then offer 2–3 preset themes | UI/UX | Medium |
 | 10 | ✅ *Fixed* — No error surfacing anywhere — failed queries render as convincing empty states | Code | Medium |
 
 ---
@@ -209,7 +235,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Medium
 - **Priority:** Medium
 
-### 1.6 Duplicated primitives across pages ⚠️ Partially fixed 2026-07-11 (format helpers, PageHeader, PageLoader done; FilterBar/DetailPanel/StatusBadge still open)
+### 1.6 Duplicated primitives across pages ✅ Fixed 2026-07-11
 - **Area:** Code architecture & logic
 - **Issue:** `fmtHours` is defined three times (Dashboard, Maintenance, MajorMaintenance) with slightly
   different formats; `StatusBadge` exists twice (Equipment, DataGaps) with diverging style maps; the
@@ -243,7 +269,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Small
 - **Priority:** Medium
 
-### 1.9 PostgREST filter breakage via search-input interpolation
+### 1.9 PostgREST filter breakage via search-input interpolation ✅ Fixed 2026-07-11
 - **Area:** Code architecture & logic
 - **Issue:** `Equipment.jsx` builds
   `q.or(\`description.ilike.%${search}%,equipment.ilike.%${search}%,...\`)`. A search containing `,`, `(`,
@@ -255,12 +281,16 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 - **Effort:** Small
 - **Priority:** Medium
 
-### 1.10 822-line `Maintenance.jsx`
+### 1.10 822-line `Maintenance.jsx` ✅ Fixed 2026-07-11
 - **Area:** Code architecture & logic
 - **Issue:** Tasks board, history log, detail panel, and completion modal all live in one file with ~20
   `useState` hooks. Hard to review and a merge-conflict magnet.
 - **Suggested approach:** Split by concern: `TasksBoard`, `HistoryLog`, `TaskDetailPanel`,
   `LogCompletionModal`, colocated in `pages/maintenance/`.
+- **What was done:** exactly that split, plus `constants.js` for the shared color maps/helpers. The page
+  component now only owns data-fetching and the completion/sweep-in business logic. Also converted every
+  route to `React.lazy()`, which fixed the "chunk larger than 500 kB" build warning as a side effect —
+  each page is its own small chunk now instead of one bundle holding all six pages.
 - **Effort:** Medium
 - **Priority:** Low
 
@@ -396,7 +426,7 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
 
 ## 3. UI/UX & visual design
 
-### 3.1 Should the theme be user-selectable? — Yes, after token consolidation ⚠️ Partially fixed (token consolidation done 2026-07-02, presets not started)
+### 3.1 Should the theme be user-selectable? — Yes, after token consolidation ✅ Fixed 2026-07-11
 - **Area:** UI/UX & visual design
 - **Issue / opportunity:** Today theming is impossible: four pages hardcode hex values (see 1.5), so
   there is effectively one theme implemented two different ways. But the user base genuinely spans two
@@ -415,6 +445,19 @@ identity. The highest-value fixes are a handful of verified bugs and one genuine
        and printing/screenshots into reports.
   Status colors (`st-run/warn/over/...`) should stay recognizably green/amber/red across all three — only
   their exact values shift per theme.
+- **What was done:** By the time this was picked up, `main` had independently re-themed the app to a light
+  "Daylight" palette using the same token names with new values — so that preset already existed as the
+  app's only theme. Converted `tailwind.config.js` to CSS custom properties (kept every token name
+  identical, so no component needed a class-name change), added **Control Room** (dark slate) and **Night**
+  (near-black, high-contrast) as the other two presets, and a sidebar picker persisted to `localStorage`
+  (with an inline `index.html` script to set the attribute before first paint, avoiding a flash of the
+  wrong theme). The real remaining work was 1.6-adjacent: several pages had picked up soft pastel status
+  colors (`bg-red-50 text-red-700`, etc.) wholesale from `main`'s retheme — literal Tailwind colors that
+  don't move with the CSS variables at all, so they'd have stayed bright/white-ish on both dark presets.
+  Converted those (Maintenance's due-state pills/tabs/rows, Major Maintenance's "Under Maintenance" badge,
+  Data Gaps' selection/confirmation text, Log Readings' validation text, the shared `ErrorBanner`, the Log
+  Completion modal) onto the token system. Solid CTA buttons (`bg-blue-600`/`bg-emerald-700` + white text)
+  were left as literal colors — an opaque colored surface with white text reads fine in any theme.
 - **Effort:** Medium (step 1 is most of it; step 2 is small)
 - **Priority:** Medium
 

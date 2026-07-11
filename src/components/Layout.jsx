@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
+import { useTheme, THEMES } from '../lib/ThemeContext'
 
 const NAV = [
   { to: '/', label: 'Dashboard', end: true },
@@ -9,6 +10,29 @@ const NAV = [
   { to: '/major-maintenance', label: 'Major Maintenance' },
   { to: '/data-gaps', label: 'Data Gaps' },
 ]
+
+function ThemePicker() {
+  const { theme, setTheme } = useTheme()
+  return (
+    <div className="flex rounded-md border border-panel-line bg-panel-bg p-0.5">
+      {THEMES.map(t => (
+        <button
+          key={t.id}
+          onClick={() => setTheme(t.id)}
+          title={t.label}
+          aria-pressed={theme === t.id}
+          className={`flex-1 rounded px-1.5 py-1 text-[10px] font-medium transition-colors ${
+            theme === t.id
+              ? 'bg-panel-surface text-ink-hi shadow-sm'
+              : 'text-ink-lo hover:text-ink-hi'
+          }`}
+        >
+          {t.short}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 export default function Layout({ children }) {
   const { signOut } = useAuth()
@@ -38,7 +62,8 @@ export default function Layout({ children }) {
           ))}
         </nav>
         <div className="mt-auto border-t border-panel-line px-5 py-3 text-[11px] text-ink-lo">
-          <div className="flex items-center justify-between">
+          <ThemePicker />
+          <div className="mt-3 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-st-run" />
               Connected

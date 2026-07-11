@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useKpis, useEquipmentStatus, useOverdueMaintenance, useEquipmentTasks } from '../lib/hooks'
-import { MetricTile, Spinner, ErrorBanner, PageHeader } from '../components/ui'
+import { MetricTile, Spinner, ErrorBanner, PageHeader, EquipmentStatusBadge } from '../components/ui'
 import { fmtHours, fmtDate } from '../lib/format'
 
 function latestReadingIso(rows) {
@@ -85,11 +85,7 @@ function GensetGrid({ data, loading, error, onRetry, onSelectTasks }) {
             <div className="font-mono text-sm font-medium text-ink-hi">{label}</div>
             <div className="text-[11px] text-ink-lo">{item.line}</div>
           </div>
-          {item.current_status === 'Under Maintenance' && (
-            <span className="rounded border border-st-warn/40 bg-st-warn/10 px-1.5 py-0.5 text-[11px] font-medium text-st-warn">
-              Under Maintenance
-            </span>
-          )}
+          {item.current_status && <EquipmentStatusBadge status={item.current_status} />}
         </div>
         <div className="mt-3 font-sans text-2xl font-bold text-ink-hi">
           {fmtHours(item.current_hours)}

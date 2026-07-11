@@ -43,6 +43,24 @@ export function StatusBadge({ status }) {
   )
 }
 
+// Equipment operating statuses (v_equipment_current_status.current_status),
+// distinct from the data-quality statuses above.
+export const EQUIPMENT_STATUS_STYLES = {
+  'Running':            'bg-st-run/10 text-st-run border border-st-run/30',
+  'Standby':            'bg-st-standby/10 text-st-standby border border-st-standby/30',
+  'Shutdown':           'bg-st-idle/10 text-st-idle border border-st-idle/30',
+  'Tripped':            'bg-st-trip/10 text-st-trip border border-st-trip/30',
+  'Under Maintenance':  'bg-st-warn/10 text-st-warn border border-st-warn/30',
+}
+
+export function EquipmentStatusBadge({ status }) {
+  return (
+    <span className={`rounded border px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap ${EQUIPMENT_STATUS_STYLES[status] || 'bg-panel-raised text-ink-mid border border-panel-line'}`}>
+      {status || 'Unknown'}
+    </span>
+  )
+}
+
 // Filter-bar primitives — shared styling for the search box + dropdowns
 // that appear above every table.
 export function FilterBar({ children, className = '' }) {

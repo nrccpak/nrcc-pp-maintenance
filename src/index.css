@@ -3,23 +3,96 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: light; }
+/* ── theme variables ─────────────────────────────────────────────────────
+   Every value is "R G B" (space-separated, no rgb() wrapper) so Tailwind's
+   `rgb(var(--x) / <alpha-value>)` pattern can apply opacity modifiers
+   (bg-panel-surface/50, text-st-over/30, …) per theme. Swapping the
+   [data-theme] attribute on <html> is the only thing that needs to change
+   to retheme the whole app — no component ever hardcodes a hex value. */
+
+/* Daylight (default) — light platinum, for office review and daylight use */
+:root,
+:root[data-theme="daylight"] {
+  color-scheme: light;
+  --panel-bg:      238 240 243;
+  --panel-surface: 255 255 255;
+  --panel-raised:  245 246 248;
+  --panel-hover:   233 236 240;
+  --panel-line:    221 225 231;
+  --panel-line2:   199 205 214;
+  --ink-hi:        27 36 48;
+  --ink-mid:       91 100 114;
+  --ink-lo:        112 123 138;
+  --st-run:        22 163 74;
+  --st-standby:    37 99 235;
+  --st-warn:       217 119 6;
+  --st-over:       220 38 38;
+  --st-trip:       225 29 72;
+  --st-idle:       148 163 184;
+  --st-partial:    234 88 12;
+}
+
+/* Control Room — dark slate, for a dim control-room wall display */
+:root[data-theme="control-room"] {
+  color-scheme: dark;
+  --panel-bg:      14 17 22;
+  --panel-surface: 22 27 34;
+  --panel-raised:  28 33 40;
+  --panel-hover:   33 38 45;
+  --panel-line:    48 54 61;
+  --panel-line2:   61 68 77;
+  --ink-hi:        230 237 243;
+  --ink-mid:       145 152 161;
+  --ink-lo:        110 118 129;
+  --st-run:        63 185 80;
+  --st-standby:    88 166 255;
+  --st-warn:       210 153 34;
+  --st-over:       248 81 73;
+  --st-trip:       255 107 129;
+  --st-idle:       110 118 129;
+  --st-partial:    240 136 62;
+}
+
+/* Night / high-contrast — near-black, brighter ink and heavier status
+   colors for glare-free night-shift viewing; doubles as the
+   accessibility/high-contrast theme. */
+:root[data-theme="night"] {
+  color-scheme: dark;
+  --panel-bg:      0 0 0;
+  --panel-surface: 10 10 10;
+  --panel-raised:  20 20 20;
+  --panel-hover:   31 31 31;
+  --panel-line:    42 42 42;
+  --panel-line2:   58 58 58;
+  --ink-hi:        255 255 255;
+  --ink-mid:       184 184 184;
+  --ink-lo:        138 138 138;
+  --st-run:        34 197 94;
+  --st-standby:    59 130 246;
+  --st-warn:       245 158 11;
+  --st-over:       239 68 68;
+  --st-trip:       244 63 94;
+  --st-idle:       115 115 115;
+  --st-partial:    251 146 60;
+}
+
 html, body, #root { height: 100%; }
 body {
   margin: 0;
-  background: #eef0f3;
-  color: #1b2430;
+  background: rgb(var(--panel-bg));
+  color: rgb(var(--ink-hi));
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 .tnum { font-variant-numeric: tabular-nums; }
 .panel-rule {
   background-image: repeating-linear-gradient(
-    90deg, transparent, transparent 3px, rgba(0,0,0,0.03) 3px, rgba(0,0,0,0.03) 4px
+    90deg, transparent, transparent 3px, rgba(127,127,127,0.08) 3px, rgba(127,127,127,0.08) 4px
   );
 }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: #c7cdd6; border-radius: 5px; }
+::-webkit-scrollbar-thumb { background: rgb(var(--panel-line2)); border-radius: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }

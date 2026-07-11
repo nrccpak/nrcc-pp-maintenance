@@ -178,7 +178,7 @@ export default function LogReadings() {
                           placeholder="Enter hours…"
                           className={`w-full bg-panel-bg border rounded px-2.5 py-1.5 text-sm font-mono tnum
                                       placeholder-ink-lo focus:outline-none focus:border-blue-500/70
-                                      ${isInvalid ? 'border-red-400 text-red-700' : 'border-panel-line text-ink-hi'}`}
+                                      ${isInvalid ? 'border-st-over/60 text-st-over' : 'border-panel-line text-ink-hi'}`}
                         />
                         {isLower && (
                           <div className="text-st-warn text-[10px] mt-1">lower than previous reading</div>
@@ -219,8 +219,8 @@ export default function LogReadings() {
         >
           {saving ? 'Saving…' : `Submit ${filled.length || ''} Reading${filled.length === 1 ? '' : 's'}`}
         </button>
-        {saveSuccess && <span className="text-emerald-700 text-sm">✓ {saveSuccess}</span>}
-        {saveError && <span className="text-red-700 text-sm">{saveError}</span>}
+        {saveSuccess && <span className="text-st-run text-sm">✓ {saveSuccess}</span>}
+        {saveError && <span className="text-st-over text-sm">{saveError}</span>}
       </div>
     </div>
   )

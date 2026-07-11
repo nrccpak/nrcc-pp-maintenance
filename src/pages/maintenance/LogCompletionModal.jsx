@@ -40,7 +40,7 @@ export default function LogCompletionModal({
               {nextDue && (
                 <div className="mt-2 text-xs text-ink-lo">
                   Next due will be set to{' '}
-                  <span className="text-blue-700 font-mono">{nextDue.next_due_hours_fmt}</span>
+                  <span className="text-st-standby font-mono">{nextDue.next_due_hours_fmt}</span>
                 </div>
               )}
             </div>
@@ -59,7 +59,7 @@ export default function LogCompletionModal({
               {nextDue && (
                 <div className="mt-2 text-xs text-ink-lo">
                   Next due will be set to{' '}
-                  <span className="text-blue-700 font-mono">{nextDue.next_due_date_fmt}</span>
+                  <span className="text-st-standby font-mono">{nextDue.next_due_date_fmt}</span>
                 </div>
               )}
             </div>
@@ -136,7 +136,7 @@ export default function LogCompletionModal({
           )}
 
           {logError && (
-            <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2.5">
+            <div className="text-xs text-st-over bg-st-over/10 border border-st-over/30 rounded px-3 py-2.5">
               {logError}
             </div>
           )}

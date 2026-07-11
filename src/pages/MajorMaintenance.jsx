@@ -24,7 +24,7 @@ function OverdueCell({ row }) {
       <span
         title={row.remarks || 'Currently under maintenance'}
         className="inline-block px-2 py-0.5 rounded text-xs font-mono whitespace-nowrap
-                   bg-amber-50 text-amber-700 border border-amber-200 cursor-help"
+                   bg-st-warn/10 text-st-warn border border-st-warn/30 cursor-help"
       >
         Under Maintenance
       </span>

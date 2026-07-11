@@ -242,7 +242,7 @@ export default function EquipmentRegistry() {
                       onClick={() => openDetail(row)}
                       className={`border-b border-panel-line cursor-pointer transition-colors
                         ${isSelected
-                          ? 'bg-blue-50 border-l-2 border-l-blue-500'
+                          ? 'bg-st-standby/10 border-l-2 border-l-st-standby'
                           : i % 2 === 0
                             ? 'hover:bg-panel-hover'
                             : 'bg-panel-raised hover:bg-panel-hover'

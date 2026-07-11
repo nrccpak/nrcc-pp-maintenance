@@ -322,14 +322,14 @@ export default function Maintenance() {
           <button
             onClick={() => setActiveTab('tasks')}
             className={`px-3.5 py-1.5 text-sm rounded-md transition-colors ${
-              activeTab === 'tasks' ? 'bg-blue-50 text-blue-700' : 'text-ink-mid hover:text-ink-hi'
+              activeTab === 'tasks' ? 'bg-st-standby/10 text-st-standby' : 'text-ink-mid hover:text-ink-hi'
             }`}>
             Maintenance Board
           </button>
           <button
             onClick={() => setActiveTab('history')}
             className={`px-3.5 py-1.5 text-sm rounded-md transition-colors ${
-              activeTab === 'history' ? 'bg-blue-50 text-blue-700' : 'text-ink-mid hover:text-ink-hi'
+              activeTab === 'history' ? 'bg-st-standby/10 text-st-standby' : 'text-ink-mid hover:text-ink-hi'
             }`}>
             History Log
           </button>

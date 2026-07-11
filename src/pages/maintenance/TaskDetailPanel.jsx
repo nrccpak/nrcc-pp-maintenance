@@ -21,8 +21,8 @@ export default function TaskDetailPanel({ selected, taskDetail, history, history
       footer={
         <button
           onClick={onLogCompletion}
-          className="w-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200
-                     hover:border-emerald-400 text-emerald-700 hover:text-emerald-800
+          className="w-full bg-st-run/10 hover:bg-st-run/20 border border-st-run/30
+                     hover:border-st-run/50 text-st-run
                      text-sm font-medium py-2.5 rounded transition-colors">
           ✓ Log Completion
         </button>
@@ -30,9 +30,9 @@ export default function TaskDetailPanel({ selected, taskDetail, history, history
     >
       {/* urgency banner */}
       <div className={`rounded-lg px-4 py-3 border ${
-        normalizeState(selected.due_state) === 'Overdue'  ? 'bg-red-50  border-red-200' :
-        normalizeState(selected.due_state) === 'Due Soon' ? 'bg-amber-50 border-amber-200' :
-        normalizeState(selected.due_state) === 'Scheduled'? 'bg-blue-50  border-blue-200' :
+        normalizeState(selected.due_state) === 'Overdue'  ? 'bg-st-over/10    border-st-over/30' :
+        normalizeState(selected.due_state) === 'Due Soon' ? 'bg-st-warn/10    border-st-warn/30' :
+        normalizeState(selected.due_state) === 'Scheduled'? 'bg-st-standby/10 border-st-standby/30' :
         'bg-panel-raised border-panel-line'
       }`}>
         <div className="text-[9px] text-ink-lo uppercase tracking-widest mb-1">Urgency</div>

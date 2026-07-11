@@ -99,7 +99,7 @@ export default function TaskBoardTab({
                             onClick={() => setSelected(isSel ? null : t)}
                             className={`border-b border-panel-line cursor-pointer transition-colors border-l-2
                               ${isSel
-                                ? `bg-blue-50 ${c.sel}`
+                                ? `bg-st-standby/10 ${c.sel}`
                                 : `border-l-transparent ${i % 2 === 0 ? 'hover:bg-panel-hover' : 'bg-panel-raised hover:bg-panel-hover'}`
                               }`}
                           >

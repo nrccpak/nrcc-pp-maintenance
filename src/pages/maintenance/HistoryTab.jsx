@@ -63,7 +63,7 @@ export default function HistoryTab({
                       key={h.id}
                       onClick={() => setExpandedHistId(isOpen ? null : h.id)}
                       className={`border-b border-panel-line cursor-pointer transition-colors
-                        ${isOpen ? 'bg-blue-50' : i % 2 === 0 ? 'hover:bg-panel-hover' : 'bg-panel-raised hover:bg-panel-hover'}`}
+                        ${isOpen ? 'bg-st-standby/10' : i % 2 === 0 ? 'hover:bg-panel-hover' : 'bg-panel-raised hover:bg-panel-hover'}`}
                     >
                       <td className="px-4 py-2.5 text-ink-lo text-xs font-mono whitespace-nowrap">
                         {h.work_date || h.work_date_text || '—'}

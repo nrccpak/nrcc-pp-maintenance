@@ -175,7 +175,7 @@ export default function DataGaps() {
             <>
               {totalGaps} component{totalGaps !== 1 ? 's' : ''} need field verification
               {confirmed > 0 && (
-                <span className="ml-2 font-mono text-emerald-700">
+                <span className="ml-2 font-mono text-st-run">
                   · {confirmed} confirmed this session ✓
                 </span>
               )}
@@ -285,7 +285,7 @@ export default function DataGaps() {
                               onClick={() => openDetail(g)}
                               className={`border-b border-panel-line cursor-pointer transition-colors border-l-2
                                 ${isSel
-                                  ? `bg-blue-50 ${m.sel}`
+                                  ? `bg-st-standby/10 ${m.sel}`
                                   : `border-l-transparent ${i % 2 === 0 ? 'hover:bg-panel-hover' : 'bg-panel-raised hover:bg-panel-hover'}`
                                 }`}
                             >
@@ -312,7 +312,7 @@ export default function DataGaps() {
 
           {totalGaps === 0 && (
             <div className="text-center py-20">
-              <div className="text-emerald-700 text-4xl mb-3">✓</div>
+              <div className="text-st-run text-4xl mb-3">✓</div>
               <div className="text-ink-hi font-semibold text-lg">All gaps cleared</div>
               <div className="text-ink-lo text-sm mt-1">Every component has been confirmed.</div>
             </div>

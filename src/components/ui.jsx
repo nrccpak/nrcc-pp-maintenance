@@ -119,12 +119,12 @@ export function MetricTile({ label, value, accent = 'text-ink-hi', barColor = 'b
 
 export function ErrorBanner({ message, onRetry, className = '' }) {
   return (
-    <div className={`flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 ${className}`}>
+    <div className={`flex items-center justify-between gap-3 rounded-lg border border-st-over/30 bg-st-over/10 px-4 py-3 text-sm text-st-over ${className}`}>
       <span>{message || 'Something went wrong loading this data.'}</span>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="shrink-0 rounded border border-red-200 px-2.5 py-1 text-xs text-red-700 hover:bg-red-100"
+          className="shrink-0 rounded border border-st-over/30 px-2.5 py-1 text-xs text-st-over hover:bg-st-over/20"
         >
           Retry
         </button>

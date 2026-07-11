@@ -7,27 +7,27 @@ const STATUS_ORDER = ['GAP', 'Partial-GAP', 'Field-verify']
 
 const STATUS_META = {
   'GAP': {
-    pill:  'bg-st-over/10 text-st-over border border-st-over/40',
-    hdr:   'text-st-over',
-    dot:   'bg-st-over',
-    sel:   'border-l-st-over',
-    badge: 'bg-st-over/10 text-st-over border border-st-over/40',
+    pill:  'bg-red-50 text-red-700 border border-red-200',
+    hdr:   'text-red-700',
+    dot:   'bg-red-500',
+    sel:   'border-l-red-700',
+    badge: 'bg-red-50 text-red-700 border border-red-200',
     desc:  'No data available — field measurement required',
   },
   'Partial-GAP': {
-    pill:  'bg-orange-900/30 text-orange-400 border border-orange-800/60',
-    hdr:   'text-orange-400',
+    pill:  'bg-orange-50 text-orange-700 border border-orange-200',
+    hdr:   'text-orange-700',
     dot:   'bg-orange-500',
     sel:   'border-l-orange-700',
-    badge: 'bg-orange-900/30 text-orange-400 border border-orange-800/60',
+    badge: 'bg-orange-50 text-orange-700 border border-orange-200',
     desc:  'Partial data present — complete the missing fields in the field',
   },
   'Field-verify': {
-    pill:  'bg-st-warn/10 text-st-warn border border-st-warn/40',
-    hdr:   'text-st-warn',
-    dot:   'bg-st-warn',
-    sel:   'border-l-st-warn',
-    badge: 'bg-st-warn/10 text-st-warn border border-st-warn/40',
+    pill:  'bg-amber-50 text-amber-700 border border-amber-200',
+    hdr:   'text-amber-700',
+    dot:   'bg-amber-500',
+    sel:   'border-l-amber-700',
+    badge: 'bg-amber-50 text-amber-700 border border-amber-200',
     desc:  'Data recorded — confirm on-site that it matches the actual asset',
   },
 }
@@ -165,7 +165,7 @@ export default function DataGaps() {
   if (loading) return (
     <div className="flex items-center justify-center h-64 text-ink-lo">
       <div className="text-center">
-        <div className="w-6 h-6 border-2 border-panel-line2 border-t-ink-mid rounded-full animate-spin mx-auto mb-3" />
+        <div className="w-6 h-6 border-2 border-panel-line2 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
         <div className="text-sm">Loading data gaps…</div>
       </div>
     </div>
@@ -189,7 +189,7 @@ export default function DataGaps() {
           <p className="text-ink-mid text-sm mt-0.5">
             {totalGaps} component{totalGaps !== 1 ? 's' : ''} need field verification
             {confirmed > 0 && (
-              <span className="ml-2 text-st-run font-mono">
+              <span className="ml-2 text-emerald-700 font-mono">
                 · {confirmed} confirmed this session ✓
               </span>
             )}
@@ -207,7 +207,7 @@ export default function DataGaps() {
         </div>
 
         {/* legend */}
-        <div className="bg-panel-surface border border-panel-line2 rounded-lg px-4 py-3 mb-4">
+        <div className="bg-panel-surface border border-panel-line rounded-lg px-4 py-3 mb-4">
           <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-2">Status Guide</div>
           <div className="grid grid-cols-1 gap-1.5">
             {STATUS_ORDER.map(key => STATUS_META[key] ? (
@@ -229,16 +229,16 @@ export default function DataGaps() {
             placeholder="Search equipment, component, description, remarks…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="bg-panel-surface border border-panel-line2 text-ink-hi placeholder-ink-lo
+            className="bg-panel-surface border border-panel-line text-ink-hi placeholder-ink-lo
                        rounded px-3 py-1.5 text-sm w-80 focus:outline-none focus:border-blue-500/70"
           />
           <select value={filterLine} onChange={e => setFilterLine(e.target.value)}
-            className="bg-panel-surface border border-panel-line2 text-ink-mid rounded px-3 py-1.5 text-sm">
+            className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
             <option value="">All Lines</option>
             {['Line-1', 'Line-2', 'Common'].map(l => <option key={l}>{l}</option>)}
           </select>
           <select value={filterSystem} onChange={e => setFilterSystem(e.target.value)}
-            className="bg-panel-surface border border-panel-line2 text-ink-mid rounded px-3 py-1.5 text-sm">
+            className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
             <option value="">All Systems</option>
             {systems.map(s => <option key={s}>{s}</option>)}
           </select>
@@ -264,12 +264,12 @@ export default function DataGaps() {
             const m    = STATUS_META[key]
             const open = !collapsed[key]
             return (
-              <div key={key} className="bg-panel-surface border border-panel-line2 rounded-lg overflow-hidden">
+              <div key={key} className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden">
 
                 {/* section header */}
                 <button
                   onClick={() => toggleGroup(key)}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-panel-raised transition-colors">
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-panel-hover transition-colors">
                   <div className="flex items-center gap-2.5">
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${m.dot}`} />
                     <span className={`text-sm font-semibold ${m.hdr}`}>{key}</span>
@@ -282,7 +282,7 @@ export default function DataGaps() {
 
                 {/* rows */}
                 {open && (
-                  <div className="border-t border-panel-line2">
+                  <div className="border-t border-panel-line">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="text-[10px] text-ink-lo uppercase tracking-widest border-b border-panel-line">
@@ -304,8 +304,8 @@ export default function DataGaps() {
                               onClick={() => openDetail(g)}
                               className={`border-b border-panel-line cursor-pointer transition-colors border-l-2
                                 ${isSel
-                                  ? `bg-panel-raised ${m.sel}`
-                                  : `border-l-transparent ${i % 2 === 0 ? 'hover:bg-panel-raised' : 'bg-panel-bg/40 hover:bg-panel-raised'}`
+                                  ? `bg-blue-50 ${m.sel}`
+                                  : `border-l-transparent ${i % 2 === 0 ? 'hover:bg-panel-hover' : 'bg-panel-raised hover:bg-panel-hover'}`
                                 }`}
                             >
                               <td className="px-4 py-2.5">
@@ -331,7 +331,7 @@ export default function DataGaps() {
 
           {totalGaps === 0 && (
             <div className="text-center py-20">
-              <div className="text-st-run text-4xl mb-3">✓</div>
+              <div className="text-emerald-700 text-4xl mb-3">✓</div>
               <div className="text-ink-hi font-semibold text-lg">All gaps cleared</div>
               <div className="text-ink-lo text-sm mt-1">Every component has been confirmed.</div>
             </div>
@@ -347,10 +347,10 @@ export default function DataGaps() {
 
       {/* ── DETAIL PANEL ─────────────────────────────────────────────── */}
       {selected && (
-        <div className="fixed right-0 top-0 h-full w-[26rem] bg-panel-surface border-l border-panel-line2 flex flex-col z-20 shadow-2xl">
+        <div className="fixed right-0 top-0 h-full w-[26rem] bg-panel-surface border-l border-panel-line flex flex-col z-20 shadow-2xl">
 
           {/* header */}
-          <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-panel-line2 sticky top-0 bg-panel-surface">
+          <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-panel-line sticky top-0 bg-panel-surface">
             <div className="flex-1 min-w-0 pr-3">
               <div className="text-[10px] text-ink-lo font-mono uppercase tracking-widest mb-1">{selected.line}</div>
               <div className="text-ink-hi font-semibold text-lg leading-tight">{selected.equipment}</div>
@@ -400,7 +400,7 @@ export default function DataGaps() {
               <select
                 value={editStatus}
                 onChange={e => setEditStatus(e.target.value)}
-                className="w-full bg-panel-bg border border-panel-line2 text-ink-hi rounded
+                className="w-full bg-panel-bg border border-panel-line text-ink-hi rounded
                            px-3 py-2 text-sm focus:outline-none focus:border-blue-500/70"
               >
                 <option value="GAP">GAP</option>
@@ -417,20 +417,20 @@ export default function DataGaps() {
                 onChange={e => setEditRemarks(e.target.value)}
                 rows={4}
                 placeholder="Add notes about the gap or what was found in the field…"
-                className="w-full bg-panel-bg border border-panel-line2 text-ink-hi rounded
+                className="w-full bg-panel-bg border border-panel-line text-ink-hi rounded
                            px-3 py-2 text-sm resize-none focus:outline-none focus:border-blue-500/70"
               />
             </div>
 
             {saveError && (
-              <div className="text-xs text-st-over bg-st-over/10 border border-st-over/40 rounded px-3 py-2.5">
+              <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2.5">
                 {saveError}
               </div>
             )}
           </div>
 
           {/* footer */}
-          <div className="px-5 py-4 border-t border-panel-line2 sticky bottom-0 bg-panel-surface space-y-2">
+          <div className="px-5 py-4 border-t border-panel-line sticky bottom-0 bg-panel-surface space-y-2">
 
             {/* quick confirm */}
             <button
@@ -446,7 +446,7 @@ export default function DataGaps() {
               <button
                 onClick={() => handleSave()}
                 disabled={saving}
-                className="w-full border border-panel-line2 hover:border-blue-500/60
+                className="w-full border border-panel-line hover:border-blue-500/60
                            text-ink-mid hover:text-ink-hi text-sm py-2 rounded transition-colors">
                 {saving ? 'Saving…' : `Change to ${editStatus}`}
               </button>
@@ -457,7 +457,7 @@ export default function DataGaps() {
               <button
                 onClick={() => handleSave()}
                 disabled={saving}
-                className="w-full border border-panel-line2 hover:border-blue-500/60
+                className="w-full border border-panel-line hover:border-blue-500/60
                            text-ink-mid hover:text-ink-hi text-sm py-2 rounded transition-colors">
                 {saving ? 'Saving…' : 'Save Remarks'}
               </button>

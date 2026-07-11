@@ -47,24 +47,20 @@ const DASHBOARD_REFRESH_MS = 60_000
 // KPI rollup for the dashboard header
 export function useKpis() {
   return useQuery(async () => {
-    const [eq, status, maint, gaps] = await Promise.all([
+    const [eq, maint, gaps] = await Promise.all([
       supabase.from('equipment').select('*', { count: 'exact', head: true }),
-      supabase.from('v_equipment_current_status').select('current_status, overdue_count'),
       supabase.from('v_maintenance_due').select('due_state'),
       supabase.from('v_data_gaps').select('*', { count: 'exact', head: true }),
     ])
-    const statuses = status.data || []
     const maintRows = maint.data || []
     return {
       data: {
         totalEquipment: eq.count ?? 0,
-        running: statuses.filter(s => s.current_status === 'Running').length,
-        standby: statuses.filter(s => s.current_status === 'Standby').length,
         overdue: maintRows.filter(m => m.due_state === 'Overdue').length,
         dueSoon: maintRows.filter(m => m.due_state === 'Due Soon').length,
         dataGaps: gaps.count ?? 0,
       },
-      error: eq.error || status.error || maint.error || gaps.error,
+      error: eq.error || maint.error || gaps.error,
     }
   }, [], { refetchInterval: DASHBOARD_REFRESH_MS })
 }

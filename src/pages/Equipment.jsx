@@ -3,15 +3,15 @@ import { supabase } from '../lib/supabase'
 import { ErrorBanner } from '../components/ui'
 
 const DATA_STATUS_STYLES = {
-  'Confirmed':    'bg-st-run/10 text-st-run border border-st-run/40',
-  'Field-verify': 'bg-st-warn/10  text-st-warn  border border-st-warn/40',
-  'GAP':          'bg-st-over/10    text-st-over    border border-st-over/40',
-  'Partial-GAP':  'bg-orange-900/30 text-orange-400 border border-orange-800/60',
+  'Confirmed':    'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  'Field-verify': 'bg-amber-50  text-amber-700  border border-amber-200',
+  'GAP':          'bg-red-50    text-red-700    border border-red-200',
+  'Partial-GAP':  'bg-orange-50 text-orange-700 border border-orange-200',
 }
 
 function StatusBadge({ status }) {
   return (
-    <span className={`px-2 py-0.5 rounded text-xs font-mono whitespace-nowrap ${DATA_STATUS_STYLES[status] || 'bg-panel-raised text-ink-mid'}`}>
+    <span className={`px-2 py-0.5 rounded text-xs font-mono whitespace-nowrap ${DATA_STATUS_STYLES[status] || 'bg-gray-100 text-ink-mid'}`}>
       {status}
     </span>
   )
@@ -168,7 +168,7 @@ export default function EquipmentRegistry() {
               className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono border transition-all
                 ${filterStatus === s
                   ? DATA_STATUS_STYLES[s]
-                  : 'bg-panel-surface border-panel-line2 text-ink-mid hover:border-ink-lo'
+                  : 'bg-panel-surface border-panel-line text-ink-mid hover:border-panel-line2'
                 }`}
             >
               <span className="font-bold text-sm">{summary[s] ?? '…'}</span>
@@ -184,18 +184,18 @@ export default function EquipmentRegistry() {
             placeholder="Search equipment, component, description, location…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="bg-panel-surface border border-panel-line2 text-ink-hi placeholder-ink-lo
+            className="bg-panel-surface border border-panel-line text-ink-hi placeholder-ink-lo
                        rounded px-3 py-1.5 text-sm w-80 focus:outline-none focus:border-blue-500/70"
           />
 
           <select value={filterLine} onChange={e => setFilterLine(e.target.value)}
-            className="bg-panel-surface border border-panel-line2 text-ink-mid rounded px-3 py-1.5 text-sm">
+            className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
             <option value="">All Lines</option>
             {LINE_OPTIONS.map(l => <option key={l}>{l}</option>)}
           </select>
 
           <select value={filterSystem} onChange={e => setFilterSystem(e.target.value)}
-            className="bg-panel-surface border border-panel-line2 text-ink-mid rounded px-3 py-1.5 text-sm">
+            className="bg-panel-surface border border-panel-line text-ink-mid rounded px-3 py-1.5 text-sm">
             <option value="">All Systems</option>
             {systems.map(s => <option key={s}>{s}</option>)}
           </select>
@@ -209,11 +209,11 @@ export default function EquipmentRegistry() {
         </div>
 
         {/* table */}
-        <div className="bg-panel-surface border border-panel-line2 rounded-lg overflow-hidden flex-1 flex flex-col">
+        <div className="bg-panel-surface border border-panel-line rounded-lg overflow-hidden flex-1 flex flex-col">
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-sm min-w-[780px]">
               <thead>
-                <tr className="border-b border-panel-line2 text-[10px] text-ink-lo uppercase tracking-widest">
+                <tr className="border-b border-panel-line text-[10px] text-ink-lo uppercase tracking-widest">
                   <th className="text-left px-4 py-3 font-medium">Line</th>
                   <th className="text-left px-4 py-3 font-medium">Equipment</th>
                   <th className="text-left px-4 py-3 font-medium">Component</th>
@@ -227,7 +227,7 @@ export default function EquipmentRegistry() {
                 {loading ? (
                   <tr>
                     <td colSpan={7} className="text-center py-16 text-ink-lo">
-                      <div className="inline-block w-5 h-5 border-2 border-panel-line2 border-t-ink-mid rounded-full animate-spin mb-2" />
+                      <div className="inline-block w-5 h-5 border-2 border-panel-line2 border-t-blue-500 rounded-full animate-spin mb-2" />
                       <div className="text-xs">Loading equipment…</div>
                     </td>
                   </tr>
@@ -253,10 +253,10 @@ export default function EquipmentRegistry() {
                       onClick={() => openDetail(row)}
                       className={`border-b border-panel-line cursor-pointer transition-colors
                         ${isSelected
-                          ? 'bg-panel-raised border-l-2 border-l-blue-500'
+                          ? 'bg-blue-50 border-l-2 border-l-blue-500'
                           : i % 2 === 0
-                            ? 'hover:bg-panel-raised'
-                            : 'bg-panel-bg/40 hover:bg-panel-raised'
+                            ? 'hover:bg-panel-hover'
+                            : 'bg-panel-raised hover:bg-panel-hover'
                         }`}
                     >
                       <td className="px-4 py-2.5 text-ink-lo text-xs font-mono whitespace-nowrap">{row.line}</td>
@@ -275,13 +275,13 @@ export default function EquipmentRegistry() {
 
           {/* pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-panel-line2 text-xs text-ink-lo">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-panel-line text-xs text-ink-lo">
               <span>
                 {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, total)} of {total} components
               </span>
               <div className="flex gap-1">
                 <button onClick={() => setPage(p => p - 1)} disabled={page === 0}
-                  className="px-3 py-1 rounded bg-panel-line text-ink-mid disabled:opacity-30 hover:bg-panel-line2">
+                  className="px-3 py-1 rounded bg-panel-raised text-ink-mid disabled:opacity-30 hover:bg-panel-line">
                   ← Prev
                 </button>
                 {(() => {
@@ -293,13 +293,13 @@ export default function EquipmentRegistry() {
                   return range.map(p => (
                     <button key={p} onClick={() => setPage(p)}
                       className={`px-3 py-1 rounded text-xs
-                        ${p === page ? 'bg-blue-600 text-white' : 'bg-panel-line text-ink-mid hover:bg-panel-line2'}`}>
+                        ${p === page ? 'bg-blue-600 text-white' : 'bg-panel-raised text-ink-mid hover:bg-panel-line'}`}>
                       {p + 1}
                     </button>
                   ))
                 })()}
                 <button onClick={() => setPage(p => p + 1)} disabled={page === totalPages - 1}
-                  className="px-3 py-1 rounded bg-panel-line text-ink-mid disabled:opacity-30 hover:bg-panel-line2">
+                  className="px-3 py-1 rounded bg-panel-raised text-ink-mid disabled:opacity-30 hover:bg-panel-line">
                   Next →
                 </button>
               </div>
@@ -310,12 +310,12 @@ export default function EquipmentRegistry() {
 
       {/* ── DETAIL PANEL ────────────────────────────────────── */}
       {selected && (
-        <div className="fixed right-0 top-0 h-full w-[26rem] bg-panel-surface border-l border-panel-line2
+        <div className="fixed right-0 top-0 h-full w-[26rem] bg-panel-surface border-l border-panel-line
                         flex flex-col z-20 shadow-2xl">
 
           {/* panel header */}
           <div className="flex items-start justify-between px-5 pt-5 pb-4
-                          border-b border-panel-line2 sticky top-0 bg-panel-surface z-10">
+                          border-b border-panel-line sticky top-0 bg-panel-surface z-10">
             <div className="flex-1 min-w-0 pr-3">
               <div className="text-[10px] text-ink-lo font-mono uppercase tracking-widest mb-1">{selected.line}</div>
               <div className="text-ink-hi font-semibold text-lg leading-tight truncate">{selected.equipment}</div>
@@ -335,7 +335,7 @@ export default function EquipmentRegistry() {
               <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-2">Data Status</div>
               {editing ? (
                 <select value={editStatus} onChange={e => setEditStatus(e.target.value)}
-                  className="bg-panel-bg border border-panel-line2 text-ink-hi rounded
+                  className="bg-panel-bg border border-panel-line text-ink-hi rounded
                              px-3 py-1.5 text-sm w-full focus:outline-none focus:border-blue-500/70">
                   {STATUS_OPTIONS.map(s => <option key={s}>{s}</option>)}
                 </select>
@@ -360,7 +360,7 @@ export default function EquipmentRegistry() {
                   onChange={e => setEditRemarks(e.target.value)}
                   rows={3}
                   placeholder="Add a remark…"
-                  className="w-full bg-panel-bg border border-panel-line2 text-ink-hi rounded
+                  className="w-full bg-panel-bg border border-panel-line text-ink-hi rounded
                              px-3 py-2 text-sm resize-none focus:outline-none focus:border-blue-500/70"
                 />
               ) : (
@@ -371,14 +371,14 @@ export default function EquipmentRegistry() {
             </div>
 
             {saveError && (
-              <div className="text-xs text-st-over bg-st-over/10 border border-st-over/40 rounded px-3 py-2">
+              <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">
                 {saveError}
               </div>
             )}
           </div>
 
           {/* panel footer */}
-          <div className="px-5 py-4 border-t border-panel-line2 sticky bottom-0 bg-panel-surface">
+          <div className="px-5 py-4 border-t border-panel-line sticky bottom-0 bg-panel-surface">
             {editing ? (
               <div className="flex gap-2">
                 <button onClick={handleSave} disabled={saving}
@@ -388,13 +388,13 @@ export default function EquipmentRegistry() {
                 </button>
                 <button onClick={() => { setEditing(false); setSaveError('') }}
                   className="px-4 text-sm text-ink-mid hover:text-ink-hi
-                             border border-panel-line2 hover:border-ink-lo rounded transition-colors">
+                             border border-panel-line hover:border-panel-line2 rounded transition-colors">
                   Cancel
                 </button>
               </div>
             ) : (
               <button onClick={() => setEditing(true)}
-                className="w-full border border-panel-line2 hover:border-blue-500/60
+                className="w-full border border-panel-line hover:border-blue-500/60
                            text-ink-mid hover:text-ink-hi text-sm py-2 rounded transition-colors">
                 Edit Status / Remarks
               </button>
@@ -405,4 +405,3 @@ export default function EquipmentRegistry() {
     </div>
   )
 }
-

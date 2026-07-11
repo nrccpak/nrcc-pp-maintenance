@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useKpis, useEquipmentStatus, useOverdueMaintenance, useEquipmentTasks } from '../lib/hooks'
-import { StatusDot, MetricTile, Spinner, ErrorBanner } from '../components/ui'
+import { MetricTile, Spinner, ErrorBanner } from '../components/ui'
 
 function fmtHours(h) {
   if (h === null || h === undefined) return '—'
@@ -38,19 +38,36 @@ function KpiStrip({ onOverdueClick }) {
   if (error) return <ErrorBanner message={error.message} onRetry={refetch} />
   if (loading || !data) return <div className="h-[76px]"><Spinner /></div>
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-      <MetricTile label="Equipment" value={data.totalEquipment} />
-      <MetricTile label="Running" value={data.running} accent="text-st-run" />
-      <MetricTile label="Standby" value={data.standby} accent="text-st-standby" />
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <MetricTile
+        label="Equipment"
+        value={data.totalEquipment}
+        barColor="border-l-blue-400"
+        dot="bg-blue-400"
+      />
       <MetricTile
         label="Overdue"
         value={data.overdue}
         accent="text-st-over"
+        barColor="border-l-st-over"
+        dot="bg-st-over"
         sub="maintenance tasks — click to view"
         onClick={onOverdueClick}
       />
-      <MetricTile label="Due Soon" value={data.dueSoon} accent="text-st-warn" />
-      <MetricTile label="Data Gaps" value={data.dataGaps} accent="text-ink-mid" />
+      <MetricTile
+        label="Due Soon"
+        value={data.dueSoon}
+        accent="text-st-warn"
+        barColor="border-l-st-warn"
+        dot="bg-st-warn"
+      />
+      <MetricTile
+        label="Data Gaps"
+        value={data.dataGaps}
+        accent="text-ink-mid"
+        barColor="border-l-panel-line2"
+        dot="bg-ink-lo"
+      />
     </div>
   )
 }
@@ -66,22 +83,26 @@ function GensetGrid({ data, loading, error, onRetry, onSelectTasks }) {
   const Card = ({ item }) => {
     const over = item.overdue_count > 0
     const dueSoon = item.due_soon_count > 0
-    const accent = over ? 'border-st-over/40' : dueSoon ? 'border-st-warn/30' : 'border-panel-line'
+    const barColor = over ? 'border-l-st-over' : dueSoon ? 'border-l-st-warn' : 'border-l-panel-line2'
     const label = item.component_type === 'Engine'
       ? item.equipment
       : `${item.equipment === 'Fuel Treatment' ? item.component_type : item.equipment}`
     return (
-      <div className={`rounded-lg border bg-panel-surface p-3.5 ${accent}`}>
+      <div className={`rounded-lg border border-l-4 border-panel-line ${barColor} bg-panel-surface p-3.5`}>
         <div className="flex items-start justify-between">
           <div>
             <div className="font-mono text-sm font-medium text-ink-hi">{label}</div>
             <div className="text-[11px] text-ink-lo">{item.line}</div>
           </div>
-          <StatusDot status={item.current_status} />
+          {item.current_status === 'Under Maintenance' && (
+            <span className="rounded border border-st-warn/40 bg-st-warn/10 px-1.5 py-0.5 text-[11px] font-medium text-st-warn">
+              Under Maintenance
+            </span>
+          )}
         </div>
-        <div className="mt-3 font-mono text-xl font-medium tnum text-ink-hi">
+        <div className="mt-3 font-sans text-2xl font-bold text-ink-hi">
           {fmtHours(item.current_hours)}
-          <span className="ml-1 text-xs font-normal text-ink-lo">hrs</span>
+          <span className="ml-1 text-xs font-normal font-sans text-ink-lo">hrs</span>
         </div>
         <div className="mt-2.5 flex items-center gap-3 text-[11px]">
           {over ? (
@@ -198,12 +219,15 @@ function OverduePanel({ expanded, onExpand, onCollapse, panelRef }) {
         <SectionLabel className="mb-0">
           {expanded ? 'All overdue maintenance tasks' : 'Overdue — by hours past due'}
         </SectionLabel>
-        <span className="font-mono text-xs text-st-over">{data.length} total</span>
+        <span className="rounded border border-st-over/30 bg-st-over/10 px-1.5 py-0.5 font-mono text-xs font-medium text-st-over">
+          {data.length} total
+        </span>
       </div>
       <table className="w-full text-sm">
         <thead>
           <tr className="text-[11px] uppercase tracking-wider text-ink-lo">
             <th className="px-4 py-2 text-left font-medium">Unit</th>
+            <th className="px-4 py-2 text-left font-medium">Component</th>
             <th className="px-4 py-2 text-left font-medium">Task</th>
             <th className="px-4 py-2 text-right font-medium">Current</th>
             <th className="px-4 py-2 text-right font-medium">Due at</th>
@@ -212,17 +236,18 @@ function OverduePanel({ expanded, onExpand, onCollapse, panelRef }) {
         </thead>
         <tbody>
           {shown.map((t, i) => (
-            <tr key={t.id ?? i} className="border-t border-panel-line/60">
-              <td className="px-4 py-2 font-mono text-ink-hi">{t.equipment}</td>
+            <tr key={t.id ?? i} className="border-t border-panel-line/60 transition-colors hover:bg-panel-hover">
+              <td className="px-4 py-2 font-mono font-medium text-ink-hi">{t.equipment}</td>
+              <td className="px-4 py-2 font-mono text-xs text-ink-lo">{t.component_type}</td>
               <td className="px-4 py-2 text-ink-mid">{t.task_name}</td>
               <td className="px-4 py-2 text-right font-mono tnum text-ink-mid">{currentDisplay(t)}</td>
               <td className="px-4 py-2 text-right font-mono tnum text-ink-lo">{dueAtDisplay(t)}</td>
-              <td className="px-4 py-2 text-right font-mono tnum font-medium text-st-over">{overdueDisplay(t)}</td>
+              <td className="px-4 py-2 text-right font-mono tnum font-bold text-st-over">{overdueDisplay(t)}</td>
             </tr>
           ))}
           {shown.length === 0 && (
             <tr>
-              <td colSpan={5} className="px-4 py-6 text-center text-sm text-ink-lo">No overdue tasks.</td>
+              <td colSpan={6} className="px-4 py-6 text-center text-sm text-ink-lo">No overdue tasks.</td>
             </tr>
           )}
         </tbody>

@@ -97,7 +97,6 @@ export default function Maintenance() {
   const [activeTab,          setActiveTab]          = useState('tasks')   // 'tasks' | 'history'
   const [allHistory,         setAllHistory]         = useState([])
   const [historyListLoading, setHistoryListLoading] = useState(false)
-  const [historyListLoaded,  setHistoryListLoaded]  = useState(false)
   const [histSearch,         setHistSearch]         = useState('')
   const [histFilterLine,     setHistFilterLine]     = useState('')
   const [histFilterCategory, setHistFilterCategory] = useState('')
@@ -157,11 +156,10 @@ export default function Maintenance() {
     if (error) { setHistLoadError(error.message); setHistoryListLoading(false); return }
     setAllHistory(data || [])
     setHistoryListLoading(false)
-    setHistoryListLoaded(true)
   }
 
   useEffect(() => {
-    if (activeTab === 'history' && !historyListLoaded) loadAllHistory()
+    if (activeTab === 'history') loadAllHistory()
   }, [activeTab])
 
   useEffect(() => { setHistPage(1) }, [histSearch, histFilterLine, histFilterCategory])

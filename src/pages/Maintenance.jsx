@@ -142,7 +142,6 @@ export default function Maintenance() {
       .eq('equipment',      selected.equipment)
       .eq('component_type', selected.component_type)
       .order('work_date', { ascending: false })
-      .limit(8)
       .then(({ data }) => { setHistory(data || []); setHistoryLoading(false) })
   }, [selected])
 
@@ -289,7 +288,7 @@ export default function Maintenance() {
     const { data: hist } = await supabase
       .from('maintenance_history').select('*')
       .eq('line', selected.line).eq('equipment', selected.equipment).eq('component_type', selected.component_type)
-      .order('work_date', { ascending: false }).limit(8)
+      .order('work_date', { ascending: false })
     setHistory(hist || [])
 
     // re-select updated task from the freshly loaded list
@@ -676,7 +675,7 @@ export default function Maintenance() {
             {/* maintenance history */}
             <div>
               <div className="text-[10px] text-ink-lo uppercase tracking-widest mb-3">
-                Maintenance History
+                Maintenance History{history.length > 0 ? ` (${history.length})` : ''}
               </div>
 
               {historyLoading ? (

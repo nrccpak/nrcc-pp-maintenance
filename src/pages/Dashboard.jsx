@@ -77,7 +77,9 @@ function GensetGrid({ data, loading, error, onRetry, onSelectTasks }) {
     const barColor = over ? 'border-l-st-over' : dueSoon ? 'border-l-st-warn' : 'border-l-panel-line2'
     const label = item.component_type === 'Engine'
       ? item.equipment
-      : `${item.equipment === 'Fuel Treatment' ? item.component_type : item.equipment}`
+      : item.equipment === 'Fuel Treatment'
+        ? item.component_type
+        : `${item.equipment} · ${item.component_type}`
     return (
       <div className={`rounded-lg border border-l-4 border-panel-line ${barColor} bg-panel-surface p-3.5`}>
         <div className="flex items-start justify-between">

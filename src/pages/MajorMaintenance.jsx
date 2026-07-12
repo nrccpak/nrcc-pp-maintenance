@@ -13,13 +13,22 @@ function byDgNumber(a, b) {
   return dgNumber(a.equipment) - dgNumber(b.equipment)
 }
 
+// A DG can be marked under maintenance two ways: an explicit workflow_status
+// on the 12K task itself (rare — no UI sets this today), or the live
+// equipment status logged via Log Readings (the normal path). Either should
+// suppress the overdue badge and show "Under Maintenance" instead, so this
+// page stays consistent with the Dashboard KPI tiles.
+function isUnderMaintenance(row) {
+  return row.workflow_status === 'In Progress' || row.current_status === 'Under Maintenance'
+}
+
 function isOverdue(row) {
-  return row.workflow_status !== 'In Progress' && Number(row.overdue_hours) > 0
+  return !isUnderMaintenance(row) && Number(row.overdue_hours) > 0
 }
 
 /* ── sub-components ──────────────────────────────────────────────────── */
 function OverdueCell({ row }) {
-  if (row.workflow_status === 'In Progress') {
+  if (isUnderMaintenance(row)) {
     return (
       <span
         title={row.remarks || 'Currently under maintenance'}
@@ -124,7 +133,7 @@ export default function MajorMaintenance() {
 
   const enginesOverdueCount    = engines.filter(isOverdue).length
   const turbosOverdueCount     = turbos.filter(isOverdue).length
-  const underMaintenanceCount  = rows.filter(r => r.workflow_status === 'In Progress').length
+  const underMaintenanceCount  = rows.filter(isUnderMaintenance).length
 
   return (
     <div className="max-w-5xl">

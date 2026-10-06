@@ -87,12 +87,23 @@ export default function Maintenance() {
   async function loadAllHistory() {
     setHistoryListLoading(true)
     setHistLoadError('')
-    const { data, error } = await supabase
-      .from('maintenance_history')
-      .select('*')
-      .order('work_date', { ascending: false })
-    if (error) { setHistLoadError(error.message); setHistoryListLoading(false); return }
-    setAllHistory(data || [])
+    // Supabase caps each request at 1,000 rows, so fetch in pages until a short page.
+    const PAGE = 1000
+    let all = [], from = 0
+    while (true) {
+      const { data, error } = await supabase
+        .from('maintenance_history')
+        .select('*')
+        .order('work_date', { ascending: false, nullsFirst: false })
+        .order('id', { ascending: false })
+        .range(from, from + PAGE - 1)
+      if (error) { setHistLoadError(error.message); setHistoryListLoading(false); return }
+      const rows = data || []
+      all = all.concat(rows)
+      if (rows.length < PAGE) break
+      from += PAGE
+    }
+    setAllHistory(all)
     setHistoryListLoading(false)
   }
 
